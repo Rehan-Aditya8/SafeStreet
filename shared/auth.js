@@ -2,6 +2,29 @@ const Auth = {
     API_URL: '/api/auth',
 
     // =========================
+    // REGISTER
+    // =========================
+    async register(name, email, password, role) {
+        try {
+            const response = await fetch(`${this.API_URL}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, role })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.msg || 'Registration failed');
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('Register Error:', error);
+            throw error;
+        }
+    },
+
+    // =========================
     // LOGIN
     // =========================
     async login(email, password) {
@@ -36,7 +59,7 @@ const Auth = {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('user_name');
-        window.location.href = '/index.html';
+        window.location.href = '/';
     },
 
     // =========================

@@ -13,7 +13,18 @@
     <!-- Top Bar -->
     <div class="top-bar">
         <h1>Track Your Reports</h1>
-        <div class="profile-icon" onclick="showAlert('Profile', 'Profile menu options', 'info')">👤</div>
+        <div class="profile-container">
+            <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
+            <div class="profile-menu" id="profileMenu">
+                <div class="menu-header">
+                    <span class="user-name">Loading...</span>
+                    <span class="user-role">Role</span>
+                </div>
+                <button class="menu-item logout" onclick="confirmLogout()">
+                    <span>🚪</span> Logout
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation -->

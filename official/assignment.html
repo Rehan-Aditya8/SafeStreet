@@ -15,7 +15,18 @@
     <!-- Top Bar -->
     <div class="top-bar">
         <h1>Assignment & Work Order</h1>
-        <div class="profile-icon">👤</div>
+        <div class="profile-container">
+            <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
+            <div class="profile-menu" id="profileMenu">
+                <div class="menu-header">
+                    <span class="user-name">Loading...</span>
+                    <span class="user-role">Role</span>
+                </div>
+                <button class="menu-item logout" onclick="confirmLogout()">
+                    <span>🚪</span> Logout
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation -->
@@ -68,12 +79,8 @@
 
                     <div class="form-group">
                         <label class="form-label">Special Instructions</label>
-                        <textarea
-                            id="instructionsInput"
-                            class="form-textarea"
-                            rows="3"
-                            placeholder="Optional instructions for contractor..."
-                        ></textarea>
+                        <textarea id="instructionsInput" class="form-textarea" rows="3"
+                            placeholder="Optional instructions for contractor..."></textarea>
                     </div>
 
                 </div>
@@ -101,9 +108,11 @@
     </div>
 
     <!-- SCRIPTS -->
+    <script src="../shared/navigation.js"></script>
     <script src="../shared/auth.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="scripts/assignment.js"></script>
 
 </body>
+
 </html>
