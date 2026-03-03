@@ -26,16 +26,17 @@
                 </svg>
             </div>
             <span class="top-bar__title">Road Damage Detection</span>
-        </div>
-        <div class="top-bar__actions">
-            <!-- Notification Bell -->
-            <a href="notifications.html" class="top-bar__icon-btn" aria-label="Notifications">
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
+                aria-expanded="false">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
                 </svg>
-            </a>
+            </button>
+        </div>
+        <div class="top-bar__actions">
             <!-- Profile Avatar -->
             <div class="profile-container">
                 <div class="top-bar__avatar" id="profileAvatar" onclick="toggleProfileMenu()" aria-label="Account menu"
@@ -73,7 +74,6 @@
         <a href="dashboard.html" class="nav-link" id="nav-dashboard">Dashboard</a>
         <a href="report-damage.html" class="nav-link" id="nav-report">Report Damage</a>
         <a href="tracking.html" class="nav-link active" id="nav-track">Track Reports</a>
-        <a href="notifications.html" class="nav-link" id="nav-notif">Notifications</a>
     </nav>
 
     <!-- =========================================================
@@ -221,18 +221,6 @@
 
     </main>
 
-    <!-- =========================================================
-         FOOTER
-    ========================================================== -->
-    <footer class="site-footer">
-        <span class="site-footer__copy">&copy; 2024 Road Damage Detection Platform. All rights reserved.</span>
-        <nav class="site-footer__links" aria-label="Footer navigation">
-            <a href="#" class="site-footer__link">Privacy Policy</a>
-            <a href="#" class="site-footer__link">Terms of Service</a>
-            <a href="#" class="site-footer__link">Contact Support</a>
-        </nav>
-    </footer>
-
     <!-- Shared modal overlay -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-container">
@@ -246,6 +234,14 @@
         </div>
     </div>
 
+    <!-- Mobile Nav Drawer -->
+    <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
+        <a href="dashboard.html" class="mobile-nav__link">Dashboard</a>
+        <a href="report-damage.html" class="mobile-nav__link">Report Damage</a>
+        <a href="tracking.html" class="mobile-nav__link active">Track Reports</a>
+    </div>
+    <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
+
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>
@@ -254,6 +250,14 @@
         document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
         });
+        function toggleMobileNav() {
+            var nav = document.getElementById('mobileNav');
+            var overlay = document.getElementById('mobileNavOverlay');
+            var btn = document.getElementById('hamburgerBtn');
+            var isOpen = nav.classList.toggle('active');
+            overlay.classList.toggle('active', isOpen);
+            btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        }
     </script>
 </body>
 
