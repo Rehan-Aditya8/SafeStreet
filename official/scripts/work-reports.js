@@ -102,11 +102,22 @@ function renderTable() {
 function applyFilters() {
     const dept = document.getElementById('deptFilter').value;
     const status = document.getElementById('statusFilter').value;
+    const startDate = document.getElementById('startDateFilter').value;
+    const endDate = document.getElementById('endDateFilter').value;
 
-    currentReports = workReports.filter(r =>
-        (!dept || r.department === dept) &&
-        (!status || r.status === status)
-    );
+    currentReports = workReports.filter(r => {
+        const matchesDept = !dept || r.department === dept;
+        const matchesStatus = !status || r.status === status;
+
+        let matchesDate = true;
+        if (r.created_at) {
+            const reportDate = new Date(r.created_at).toISOString().split('T')[0];
+            if (startDate && reportDate < startDate) matchesDate = false;
+            if (endDate && reportDate > endDate) matchesDate = false;
+        }
+
+        return matchesDept && matchesStatus && matchesDate;
+    });
 
     renderTable();
 }
@@ -114,6 +125,8 @@ function applyFilters() {
 function clearFilters() {
     document.getElementById('deptFilter').value = '';
     document.getElementById('statusFilter').value = '';
+    document.getElementById('startDateFilter').value = '';
+    document.getElementById('endDateFilter').value = '';
     currentReports = [...workReports];
     renderTable();
 }
@@ -188,47 +201,6 @@ async function downloadNotice(reportId) {
 }
 
 
-function setupDropZone() {
-    const dropZone = document.getElementById('dropZone');
-    const fileInput = document.getElementById('fileInput');
-
-    dropZone.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', async (e) => {
-        const pdf = e.target.files[0];
-        if (!pdf) return;
-
-        const formData = new FormData();
-        formData.append('pdf', pdf);
-
-        const extractionStatus = document.getElementById('extractionStatus');
-        extractionStatus.style.display = 'block';
-
-        try {
-            const res = await Auth.fetchWithAuth('/api/official/work-reports/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.msg || "Upload failed");
-            }
-
-            closeCreateReportModal();
-            await loadReports();
-            renderTable();
-        } catch (error) {
-            console.error('Upload error:', error);
-            showModal("Upload Failed", error.message);
-        } finally {
-            extractionStatus.style.display = 'none';
-            fileInput.value = ''; // Reset file input
-        }
-    });
-}
-
 // =====================================================
 // CREATE REPORT MODAL
 // =====================================================
@@ -281,12 +253,13 @@ function setupDropZone() {
 // UPLOAD PDF
 // =====================================================
 async function uploadNoticePDF(file) {
-    if (!file.name.endsWith('.pdf')) {
+    if (!file.name.toLowerCase().endsWith('.pdf')) {
         showModal('Invalid File', 'Please upload a PDF file only.');
         return;
     }
 
-    document.getElementById('extractionStatus').style.display = 'flex';
+    const extractionStatus = document.getElementById('extractionStatus');
+    extractionStatus.style.display = 'flex';
 
     const formData = new FormData();
     formData.append('pdf', file);
@@ -310,9 +283,11 @@ async function uploadNoticePDF(file) {
         renderTable();
 
     } catch (err) {
+        console.error('Upload error:', err);
         showModal('Error', err.message);
     } finally {
-        document.getElementById('extractionStatus').style.display = 'none';
+        extractionStatus.style.display = 'none';
+        document.getElementById('fileInput').value = ''; // Reset
     }
 }
 

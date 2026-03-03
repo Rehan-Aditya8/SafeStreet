@@ -186,17 +186,45 @@ function renderStatusIndicator() {
 /**
  * Render photos
  */
-function renderPhotos() {
-    if (currentWork) {
-        document.getElementById('beforePhoto').src = currentWork.beforePhoto;
-        if (currentWork.afterPhoto) {
-            document.getElementById('afterPhoto').src = currentWork.afterPhoto;
-        } else {
-            document.getElementById('afterPhoto').src = 'https://via.placeholder.com/600x400/cccccc/666666?text=Not+Available+Yet';
+/**
+ * Render photos dynamically from report data
+ */
+async function renderPhotos() {
+    const beforeImg = document.getElementById('beforePhoto');
+    const afterImg = document.getElementById('afterPhoto');
+
+    if (!beforeImg || !afterImg) return;
+
+    // 1. Try to get the "Before" image from the currentReport object
+    if (currentReport && currentReport.image_url) {
+        try {
+            const response = await Auth.fetchWithAuth(currentReport.image_url);
+            if (response.ok) {
+                const blob = await response.blob();
+                beforeImg.src = URL.createObjectURL(blob);
+                beforeImg.style.display = 'block';
+            } else {
+                beforeImg.src = currentReport.image_url;
+            }
+        } catch (err) {
+            console.error('Image load failed');
+            beforeImg.src = 'https://via.placeholder.com/600x400/f1f5f9/94a3b8?text=Image+Load+Failed';
         }
-    } else if (currentReport) {
-        document.getElementById('beforePhoto').src = currentReport.image_url;
-        document.getElementById('afterPhoto').src = 'https://via.placeholder.com/600x400/cccccc/666666?text=Not+Available+Yet';
+    }
+    // Fallback to currentWork data if currentReport isn't populated
+    else if (currentWork && currentWork.beforePhoto) {
+        beforeImg.src = currentWork.beforePhoto;
+    }
+    // Final fallback: Placeholder
+    else {
+        beforeImg.src = 'https://via.placeholder.com/600x400/f1f5f9/94a3b8?text=Original+Report+Photo+Missing';
+    }
+
+    // 2. Handle the "After" image (Repair documentation)
+    if (currentWork && currentWork.afterPhoto) {
+        afterImg.src = currentWork.afterPhoto;
+    } else {
+        afterImg.src = 'https://via.placeholder.com/600x400/f1f5f9/94a3b8?text=Repair+Photo+Pending';
     }
 }
 
