@@ -42,14 +42,14 @@
 }
 
 .work-order-preview {
-    background: #0f3460;
+    background: #d5d8db;
     padding: 1.5rem;
     border-radius: 8px;
     font-family: 'Courier New', monospace;
     font-size: 0.9rem;
     line-height: 1.8;
     white-space: pre-line;
-    color: #fff;
+    color: #000000;
     border: 1px solid #16213e;
 }
 

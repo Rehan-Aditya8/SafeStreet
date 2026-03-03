@@ -201,25 +201,36 @@ def upload_work_notice():
     # -------------------------------
     # 💾 SAVE TO DB
     # -------------------------------
-    report = WorkReport(
-        notice_id=extracted["notice_id"],
-        department=extracted["department"],
-        work_type=extracted["work_type"],
-        location=extracted["location"],
-        executing_agency=extracted["executing_agency"],
-        contractor_contact=extracted["contractor_contact"],
-        pdf_filename=filename,
-        status="pending"
-    )
+    from sqlalchemy.exc import IntegrityError
 
-    db.session.add(report)
-    db.session.commit()
+    try:
+        report = WorkReport(
+            notice_id=extracted["notice_id"],
+            department=extracted["department"],
+            work_type=extracted["work_type"],
+            location=extracted["location"],
+            executing_agency=extracted["executing_agency"],
+            contractor_contact=extracted["contractor_contact"],
+            pdf_filename=filename,
+            status="pending"
+        )
 
-    return jsonify({
-        "msg": "Work notice uploaded & extracted successfully",
-        "notice_id": report.notice_id,
-        "id": report.id
-    }), 201
+        db.session.add(report)
+        db.session.commit()
+
+        return jsonify({
+            "msg": "Work notice uploaded & extracted successfully",
+            "notice_id": report.notice_id,
+            "id": report.id
+        }), 201
+
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"msg": "This notice has already been uploaded (Duplicate Notice ID)."}), 400
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Database error during upload: {e}")
+        return jsonify({"msg": f"System error occurred: {str(e)}"}), 500
 
 
 # =====================================================
