@@ -279,7 +279,7 @@ function updateStatusSummary(reports) {
 }
 
 /**
- * View report detail inline on dashboard
+ * Navigate to tracking page with report details
  */
 function viewReport(reportId) {
     const report = allReports.find(r => String(r.id) === String(reportId));
@@ -287,7 +287,8 @@ function viewReport(reportId) {
         console.warn(`Report ${reportId} not found`);
         return;
     }
-    renderDetailView(report);
+    sessionStorage.setItem('selectedReportId', reportId);
+    window.location.href = 'tracking.html';
 }
 
 /**

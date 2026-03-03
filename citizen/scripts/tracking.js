@@ -396,12 +396,10 @@ function renderDepartmentInfo() {
 }
 
 /**
- * Close report details
+ * Close report details and return to Dashboard
  */
 function closeReportDetails() {
-    document.getElementById('reportDetails').style.display = 'none';
-    document.getElementById('reportsList').style.display = 'block';
-    currentReport = null;
+    window.location.href = 'dashboard.html';
 }
 
 /**

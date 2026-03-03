@@ -30,24 +30,26 @@ function initNavigation() {
 }
 
 /**
- * Update profile info from localStorage
+ * Update profile info from localStorage (login details)
  */
 function updateProfileInfo() {
-    const userNameEl = document.querySelector('.user-name');
-    const userRoleEl = document.querySelector('.user-role');
+    const name = localStorage.getItem('user_name') || 'User';
+    const role = localStorage.getItem('role') || '';
+
+    const roleText = role === 'official' ? 'Lead Officer' : role ? role.charAt(0).toUpperCase() + role.slice(1) : '';
+
+    // Update all .user-name elements (profile dropdown)
+    document.querySelectorAll('.user-name').forEach(el => { el.textContent = name; });
+
+    // Update all .user-role elements
+    document.querySelectorAll('.user-role').forEach(el => { if (roleText) el.textContent = roleText; });
+
+    // Update dashboard top bar user name
+    const topBarName = document.getElementById('topBarUserName');
+    if (topBarName) topBarName.textContent = name;
+
+    // Update avatar if present (official portal)
     const headerAvatar = document.getElementById('headerAvatar');
-
-    if (!userNameEl && !userRoleEl && !headerAvatar) return;
-
-    const name = localStorage.getItem('user_name') || 'Official';
-    const role = localStorage.getItem('role') || 'Officer';
-
-    if (userNameEl) userNameEl.textContent = name;
-    if (userRoleEl) {
-        const roleText = role === 'official' ? 'Lead Officer' : role.charAt(0).toUpperCase() + role.slice(1);
-        userRoleEl.textContent = roleText;
-    }
-
     if (headerAvatar) {
         headerAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=f1f5f9&color=64748b`;
     }
