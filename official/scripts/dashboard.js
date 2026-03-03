@@ -61,39 +61,55 @@ function updateKPIs() {
  * Apply filters
  */
 function applyFilters() {
-    const startDate = document.getElementById('startDateFilter').value;
-    const endDate = document.getElementById('endDateFilter').value;
+    const searchInput = document.getElementById('dashboardSearchInput');
+    const searchText = (searchInput ? searchInput.value : '').toLowerCase();
+    const issueTypeFilter = document.getElementById('issueTypeFilter').value;
     const severityFilter = document.getElementById('severityFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
+    const startDate = document.getElementById('startDateFilter').value;
+    const endDate = document.getElementById('endDateFilter').value;
 
     filteredReports = allOfficerReports.filter(report => {
+        // 1. Search Logic
+        const reportId = (report.id || '').toLowerCase();
+        const location = (report.location || '').toLowerCase();
+        const damageType = (report.damage_type || '').toLowerCase();
+        const searchMatch = !searchText ||
+            reportId.includes(searchText) ||
+            location.includes(searchText) ||
+            damageType.includes(searchText);
+
+        // 2. Issue Type Logic
+        const issueTypeMatch = !issueTypeFilter || (report.damage_type || '').toLowerCase().includes(issueTypeFilter);
+
+        // 3. Severity Logic
         const severityMatch = !severityFilter || (report.severity || '').toLowerCase() === severityFilter;
 
-        let statusMatch = true;
-        if (statusFilter) {
-            if (statusFilter === 'pending') statusMatch = report.status === 'submitted';
-            else if (statusFilter === 'verified') statusMatch = (report.status === 'verified' || report.status === 'approved');
-            else statusMatch = report.status === statusFilter;
+        // 4. Status Logic
+        let statusMatch = !statusFilter;
+        if (statusFilter === 'verified') {
+            statusMatch = report.status === 'verified' || report.status === 'approved';
+        } else if (statusFilter) {
+            statusMatch = report.status === statusFilter;
         }
 
+        // 4. Date Logic
         let dateMatch = true;
-        if (startDate || endDate) {
-            const reportDate = new Date(report.created_at);
-            reportDate.setHours(0, 0, 0, 0);
+        const reportDate = new Date(report.created_at);
+        reportDate.setHours(0, 0, 0, 0);
 
-            if (startDate) {
-                const sDate = new Date(startDate);
-                sDate.setHours(0, 0, 0, 0);
-                if (reportDate < sDate) dateMatch = false;
-            }
-            if (endDate) {
-                const eDate = new Date(endDate);
-                eDate.setHours(23, 59, 59, 999);
-                if (reportDate > eDate) dateMatch = false;
-            }
+        if (startDate) {
+            const start = new Date(startDate);
+            start.setHours(0, 0, 0, 0);
+            if (reportDate < start) dateMatch = false;
+        }
+        if (endDate) {
+            const end = new Date(endDate);
+            end.setHours(23, 59, 59, 999);
+            if (reportDate > end) dateMatch = false;
         }
 
-        return severityMatch && statusMatch && dateMatch;
+        return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch;
     });
 
     renderReportsTable();
@@ -103,10 +119,13 @@ function applyFilters() {
  * Clear all filters
  */
 function clearFilters() {
-    document.getElementById('startDateFilter').value = '';
-    document.getElementById('endDateFilter').value = '';
+    const searchInput = document.getElementById('dashboardSearchInput');
+    if (searchInput) searchInput.value = '';
+    document.getElementById('issueTypeFilter').value = '';
     document.getElementById('severityFilter').value = '';
     document.getElementById('statusFilter').value = '';
+    document.getElementById('startDateFilter').value = '';
+    document.getElementById('endDateFilter').value = '';
     filteredReports = [...allOfficerReports];
     renderReportsTable();
 }
@@ -123,47 +142,86 @@ function renderReportsTable() {
     }
 
     tbody.innerHTML = filteredReports.map(report => {
-        const severity = report.severity || 'pending';
-        const severityClass = `severity-${severity.toLowerCase()}`;
+        const severity = (report.severity || 'low').toLowerCase();
+        const severityPill = `pill-${severity}`;
         const severityText = severity.charAt(0).toUpperCase() + severity.slice(1);
 
         // Status mapping
-        let statusClass = 'pending';
+        let statusPill = 'pill-pending';
         let statusText = report.status;
 
-        if (report.status === 'submitted') { statusClass = 'pending'; statusText = 'Pending Verification'; }
-        else if (report.status === 'verified' || report.status === 'approved') { statusClass = 'verified'; statusText = 'Verified'; }
-        else if (report.status === 'assigned') { statusClass = 'in-progress'; statusText = 'Assigned'; }
-        else if (report.status === 'in-progress') { statusClass = 'in-progress'; statusText = 'In Progress'; }
-        else if (report.status === 'resolved') { statusClass = 'completed'; statusText = 'Resolved'; }
-        else if (report.status === 'rejected') { statusClass = 'completed'; statusText = 'Rejected'; }
+        if (report.status === 'submitted') { statusPill = 'pill-pending'; statusText = 'Pending Review'; }
+        else if (report.status === 'verified' || report.status === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
+        else if (report.status === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
+        else if (report.status === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
+        else if (report.status === 'resolved') { statusPill = 'pill-resolved'; statusText = 'Resolved'; }
+        else if (report.status === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
 
-        const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString() : 'N/A';
+        const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
+        const agoText = report.created_at ? formatTimeAgo(new Date(report.created_at)) : 'N/A';
 
         return `
             <tr>
-                <td>${report.id.substring(0, 8)}...</td>
-                <td>${report.location || 'Unknown'}</td>
-                <td><span class="status-chip ${severityClass}">${severityText}</span></td>
-                <td><span class="status-chip status-${statusClass}">${statusText}</span></td>
-                <td>${dateStr}</td>
+                <td style="font-weight: 600;">${report.id}</td>
+                <td>${report.location}</td>
+                <td>${report.damage_type || 'Road Damage'}</td>
+                <td><span class="pill ${statusPill}">${statusText}</span></td>
+                <td><span class="pill pill-${severity}">${severityText}</span></td>
+                <td style="color: var(--text-muted);">${dateStr}</td>
                 <td>
-                    <div class="table-actions">
-                        <button class="btn btn-primary" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">View</button>
+                    <div class="action-btns">
+                        <button class="action-btn" title="View Details" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
                         ${report.status === 'submitted' ? `
-                            <button class="btn btn-success" onclick="verifyReport('${report.id}')">Verify</button>
+                            <button class="action-btn" title="Verify" onclick="verifyReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                                </svg>
+                            </button>
                         ` : ''}
                         ${(report.status === 'verified' || report.status === 'approved') ? `
-                            <button class="btn btn-secondary" onclick="assignReport('${report.id}')">Assign</button>
+                            <button class="action-btn" title="Assign" onclick="assignReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
+                                </svg>
+                            </button>
                         ` : ''}
                         ${(report.status === 'assigned' || report.status === 'in-progress') ? `
-                            <button class="btn btn-info" onclick="monitorReport('${report.id}')">Monitor</button>
+                            <button class="action-btn" title="Monitor" onclick="monitorReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M12 9v3l2 2"/><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                </svg>
+                            </button>
                         ` : ''}
+                        <!-- <button class="action-btn" title="Edit">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button> -->
                     </div>
                 </td>
             </tr>
         `;
     }).join('');
+}
+
+/**
+ * Helper to format time ago
+ */
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 0) return `${diffInDays}d ago`;
+    if (diffInHours > 0) return `${diffInHours}h ago`;
+    if (diffInMinutes > 0) return `${diffInMinutes}m ago`;
+    return 'Just now';
 }
 
 // Expose functions to window
@@ -239,3 +297,28 @@ function loadPanelMap(lat, lng) {
 // Expose open/close to window for HTML onclicks
 window.openPanel = openPanel;
 window.closePanel = closePanel;
+
+/**
+ * Toggle profile menu visibility
+ */
+window.toggleProfileMenu = function () {
+    const menu = document.getElementById('profileMenu');
+    if (menu) menu.classList.toggle('active');
+};
+
+/**
+ * Export dashboard data (Placeholder)
+ */
+window.exportData = function () {
+    alert("Exporting data as CSV...");
+    // Logic for actual export can go here
+};
+
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+    const profileSection = document.querySelector('.profile-section');
+    const menu = document.getElementById('profileMenu');
+    if (profileSection && !profileSection.contains(e.target) && menu) {
+        menu.classList.remove('active');
+    }
+});

@@ -7,62 +7,107 @@
     <title>Official Registration - Road Damage Detection</title>
     <link rel="stylesheet" href="../shared/styles.css">
     <style>
+        :root {
+            --primary: #3b82f6;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+
         body {
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            background-color: var(--bg-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            color: var(--text-main);
         }
 
         .login-card {
-            background: #16213e;
-            padding: 2.5rem;
-            border-radius: 12px;
+            background: var(--bg-card);
+            padding: 3rem;
+            border-radius: 20px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            border: 1px solid #0d6efd;
-            /* Blue border for official distinction */
+            max-width: 440px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
 
         .login-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         .login-header h1 {
-            color: #fff;
-            font-size: 1.8rem;
+            color: var(--text-main);
+            font-size: 2rem;
+            font-weight: 800;
             margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
         }
 
         .login-header p {
-            color: #aaa;
+            color: var(--text-muted);
+            font-size: 0.95rem;
         }
 
         .badge-official {
-            background: #0d6efd;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
             display: inline-block;
+            border: 1px solid var(--border);
+            letter-spacing: 0.05em;
         }
 
         .back-link {
             display: block;
             text-align: center;
-            margin-top: 1.5rem;
-            color: #666;
+            margin-top: 2rem;
+            color: var(--text-muted);
             text-decoration: none;
             font-size: 0.9rem;
+            transition: color 0.2s;
         }
 
         .back-link:hover {
-            color: #0d6efd;
+            color: var(--text-main);
+        }
+
+        /* Override shared form styles for better fit */
+        .form-input,
+        .form-select {
+            background: #f8fafc !important;
+            border: 1px solid #e2e8f0 !important;
+            color: #0f172a !important;
+            border-radius: 12px !important;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            border-color: #3b82f6 !important;
+            background: #ffffff !important;
+        }
+
+        .btn-primary {
+            background: #0f172a !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 1rem !important;
+            font-weight: 600 !important;
+        }
+
+        .btn-primary:hover {
+            background: #1e293b !important;
         }
     </style>
 </head>
