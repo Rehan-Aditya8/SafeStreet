@@ -287,8 +287,7 @@ function viewReport(reportId) {
         console.warn(`Report ${reportId} not found`);
         return;
     }
-    sessionStorage.setItem('selectedReportId', reportId);
-    window.location.href = 'tracking.html';
+    renderDetailView(report);
 }
 
 /**

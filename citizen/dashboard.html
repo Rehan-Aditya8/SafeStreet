@@ -41,8 +41,8 @@
             </div>
             <nav class="top-bar__nav" role="navigation" aria-label="Main navigation">
                 <a href="dashboard.html" class="top-nav-link active" id="nav-dashboard">Dashboard</a>
-                <a href="tracking.html" class="top-nav-link" id="nav-tracking">Track Reports</a>
                 <a href="report-damage.html" class="top-nav-link" id="nav-report">Report Damage</a>
+                <a href="map.html" class="top-nav-link" id="nav-map">Map</a>
             </nav>
             <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
                 aria-expanded="false">
@@ -96,9 +96,9 @@
         <!-- ---- Page Header ---- -->
         <div class="page-header">
             <div class="page-header__text">
-                <h1 class="page-header__title">Citizen Dashboard</h1>
-                <p class="page-header__subtitle">Welcome back. Here is an overview of your reports.</p>
-            </div>
+                <!-- <h1 class="page-header__title">Citizen Dashboard</h1> -->
+                <!-- <p class="page-header__subtitle">Welcome back. Here is an overview of your reports.</p> -->
+            </div> 
             <button class="btn btn-primary btn-report" onclick="window.location.href='report-damage.html'"
                 id="reportNewIssueBtn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -123,7 +123,7 @@
                         stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="15 18 9 12 15 6" />
                     </svg>
-                    Back to Dashboard
+                    Back
                 </button>
             </div>
 
@@ -189,7 +189,7 @@
                                 <circle cx="8.5" cy="8.5" r="1.5" />
                                 <polyline points="21 15 16 10 5 21" />
                             </svg>
-                            <span>Repair image will be available after completion</span>
+                            <span>Repairing in progress</span>
                         </div>
                     </div>
                 </div>
@@ -293,7 +293,6 @@
                     <!-- Header row -->
                     <div class="card__header">
                         <h2 class="card__title" id="recentReportsHeading">Recent Reports</h2>
-                        <a href="tracking.html" class="card__link" id="viewAllBtn">View All Reports</a>
                     </div>
 
                     <!-- Filter bar -->
@@ -358,28 +357,6 @@
                     </div>
                 </section>
 
-                <!-- Right Column -->
-                <aside class="right-col">
-                    <!-- Map Coordinates -->
-                    <div class="map-coords-card">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2"
-                            stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="10" r="3" />
-                            <path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z" />
-                        </svg>
-                        <span id="mapCoordsText">Lat: 19.03719, Lng: 73.02138</span>
-                    </div>
-
-                    <!-- Coverage Map -->
-                    <div class="stat-card stat-card--map" style="border-radius:12px;">
-                        <h3 class="map-card__title" style="font-size:0.9rem;margin-bottom:0.5rem;">Coverage Map</h3>
-                        <div class="map-placeholder" id="mapContainer"
-                            style="min-height:350px;border-radius:8px;overflow:hidden;">
-                            <div id="leafletMap"></div>
-                        </div>
-                    </div>
-                </aside>
-
             </div><!-- /.dashboard-grid -->
         </div><!-- /#dashboardContent -->
     </main>
@@ -400,8 +377,8 @@
     <!-- Mobile Nav Drawer -->
     <div class="mobile-nav" id="mobileNav" role="navigation" aria-label="Mobile navigation">
         <a href="dashboard.html" class="mobile-nav__link active">Dashboard</a>
-        <a href="tracking.html" class="mobile-nav__link">Track Reports</a>
         <a href="report-damage.html" class="mobile-nav__link">Report Damage</a>
+        <a href="map.html" class="mobile-nav__link">Map</a>
     </div>
     <div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="toggleMobileNav()"></div>
 
