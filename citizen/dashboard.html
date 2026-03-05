@@ -20,6 +20,43 @@
             border-radius: 8px;
             z-index: 1;
         }
+
+        /* Fix Timeline Alignment & Center-to-Center Line */
+        .detail-timeline::before {
+            display: none !important;
+        }
+
+        .detail-timeline .tl-step {
+            position: relative;
+        }
+
+        /* Use higher specificity to override external stylesheet 'content: none' */
+        .detail-timeline .tl-step::after {
+            content: '' !important;
+            position: absolute;
+            left: 11px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e5e7eb !important;
+            z-index: 0;
+            display: block !important;
+        }
+
+        .detail-timeline .tl-step:first-child::after {
+            top: 11px !important;
+        }
+
+        .detail-timeline .tl-step:last-child::after {
+            height: 11px !important;
+            bottom: auto !important;
+        }
+
+        /* Ensure dots stay above the line */
+        .tl-dot {
+            position: relative;
+            z-index: 1;
+        }
     </style>
 </head>
 
@@ -99,7 +136,7 @@
             <div class="page-header__text">
                 <!-- <h1 class="page-header__title">Citizen Dashboard</h1> -->
                 <!-- <p class="page-header__subtitle">Welcome back. Here is an overview of your reports.</p> -->
-            </div> 
+            </div>
             <button class="btn btn-primary btn-report" onclick="window.location.href='report-damage.html'"
                 id="reportNewIssueBtn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
