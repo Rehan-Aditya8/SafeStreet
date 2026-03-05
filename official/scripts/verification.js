@@ -141,7 +141,7 @@ async function populateReport(report) {
 
     // REPORT INFO
     document.getElementById('reportInfo').innerHTML = `
-        <div class="report-info-item"><strong>Report ID:</strong> ${report.id}</div>
+        <div class="report-info-item"><strong>Report ID:</strong> <span title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</span></div>
         <div class="report-info-item"><strong>Reported By:</strong> ${report.reported_by || 'Citizen'}</div>
         <div class="report-info-item"><strong>Date:</strong> ${new Date(report.created_at).toLocaleString()}</div>
         <div class="report-info-item"><strong>Status:</strong> ${report.status}</div>

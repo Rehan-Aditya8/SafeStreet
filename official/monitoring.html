@@ -59,9 +59,19 @@
     <div class="container">
         <!-- Work Details -->
         <div id="workDetails" style="display: none;">
+            <!-- Back Button -->
+            <div class="back-bar" style="margin-bottom: 1.5rem;">
+                <button class="btn btn-ghost" onclick="window.location.href='dashboard.html'"
+                    style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; color: #334155; font-weight: 600; transition: all 0.2s; cursor: pointer;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg> Back to Dashboard
+                </button>
+            </div>
+
             <!-- Status Timeline -->
             <div class="status-timeline-section">
-                <h2>Report Status</h2>
+                <h2>Status Timeline</h2>
                 <div class="timeline" id="statusTimeline">
                     <!-- Timeline items will be populated by JavaScript -->
                 </div>
@@ -95,18 +105,16 @@
                 <h2>Work Logs</h2>
                 <div class="logs-container" id="logsContainer">
                     Logs will be populated by JavaScript -->
-                <!-- </div>
-            </div> --> 
+            <!-- </div>
+            </div> -->
 
             <!-- Actions -->
             <div class="monitoring-actions">
                 <button class="btn btn-success btn-large" id="markCompletedBtn" onclick="markCompleted()">
                     Mark as Completed
                 </button>
-                <!-- <button class="btn btn-danger" onclick="flagIssue()">
-                    Flag Issue
                 </button>
-            </div> -->
+            </div>
         </div>
 
         <!-- Active Works List (Fallback) -->

@@ -128,21 +128,32 @@ function renderTimeline() {
 
     const timelineData = labels.map((label, idx) => ({
         step: label,
-        date: idx <= currentStageIndex ? (idx === 0 ? new Date(currentReport.created_at).toLocaleString() : (idx === currentStageIndex ? 'Current' : 'Done')) : null,
+        date: idx <= currentStageIndex ? (idx === 0 ? new Date(currentReport.created_at).toLocaleString('en-US', { year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true }) : (idx === currentStageIndex ? 'Current' : 'Done')) : 'Pending',
         completed: idx < currentStageIndex,
         active: idx === currentStageIndex
     }));
 
     timelineContainer.innerHTML = timelineData.map((item, index) => {
-        let className = 'timeline-item';
-        if (item.completed) className += ' completed';
-        if (item.active) className += ' active';
+        let dotClass = 'timeline-dot';
+        if (item.completed || item.active) dotClass += ' completed-active';
+
+        let iconHtml = '';
+        if (item.completed || item.active) {
+            // White checkmark for completed/active
+            iconHtml = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+        } else {
+            // Darker gray dot for pending
+            iconHtml = `<div style="width: 6px; height: 6px; border-radius: 50%; background-color: #94a3b8;"></div>`;
+        }
 
         return `
-            <div class="${className}">
-                <div class="timeline-content">
-                    <strong>${item.step}</strong>
-                    ${item.date ? `<div class="timeline-date">${item.date}</div>` : '<div class="timeline-date">Pending</div>'}
+            <div class="timeline-item">
+                <div class="${dotClass}">
+                    ${iconHtml}
+                </div>
+                <div class="timeline-content-text">
+                    <div class="timeline-title">${item.step}</div>
+                    <div class="timeline-desc">${item.date}</div>
                 </div>
             </div>
         `;
@@ -158,13 +169,26 @@ function renderStatusIndicator() {
 
     if (currentWork) {
         indicator.innerHTML = `
-            <div class="status-badge status-${currentWork.status}">${currentWork.statusText}</div>
-            <div style="margin-top: 1rem;">
-                <p><strong>Work Order ID:</strong> ${currentWork.id}</p>
-                <p><strong>Report ID:</strong> ${currentWork.reportId}</p>
-                <p><strong>Contractor:</strong> ${currentWork.contractor}</p>
-                <p><strong>Assigned Date:</strong> ${currentWork.assignedDate}</p>
-                <p><strong>Expected Completion:</strong> ${currentWork.expectedCompletion}</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; color: #1e293b; font-size: 1.2rem;">Work Order #<span title="${currentWork.id}">${currentWork.id.split('-')[0].substring(0, 8)}</span></h3>
+                    <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">Report Ref: <span title="${currentWork.reportId}">${currentWork.reportId.split('-')[0].substring(0, 8)}</span></p>
+                </div>
+                <div class="status-badge ${currentWork.status}" style="margin: 0;">${currentWork.statusText}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: left;">
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Contractor</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentWork.contractor}</strong>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Assigned Date</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentWork.assignedDate}</strong>
+                </div>
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Expected Completion</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentWork.expectedCompletion}</strong>
+                </div>
             </div>
         `;
     } else if (currentReport) {
@@ -173,11 +197,18 @@ function renderStatusIndicator() {
             (currentReport.status === 'resolved' ? 'completed' : 'pending');
 
         indicator.innerHTML = `
-            <div class="status-badge status-${statusClass}">${statusText}</div>
-            <div style="margin-top: 1rem;">
-                <p><strong>Report ID:</strong> ${currentReport.id}</p>
-                <p><strong>Location:</strong> ${currentReport.location}</p>
-                <p><strong>Status:</strong> ${statusText}</p>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0; color: #1e293b; font-size: 1.2rem;">Report #<span title="${currentReport.id}">${currentReport.id.split('-')[0].substring(0, 8)}</span></h3>
+                    <p style="margin: 0.25rem 0 0 0; color: #64748b; font-size: 0.9rem;">Filed locally</p>
+                </div>
+                <div class="status-badge ${statusClass}" style="margin: 0;">${statusText}</div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; text-align: left;">
+                <div>
+                    <span style="display: block; font-size: 0.85rem; color: #64748b; margin-bottom: 0.25rem; font-weight: 600; text-transform: uppercase;">Location</span>
+                    <strong style="color: #1e293b; font-size: 1.05rem;">${currentReport.location}</strong>
+                </div>
             </div>
         `;
     }
@@ -269,7 +300,7 @@ function renderActiveWorks() {
         <div class="work-card" onclick="selectWork('${work.id}')">
             <div class="work-card-header">
                 <div class="work-card-title">${work.id}</div>
-                <span class="status-chip status-${work.status}">${work.statusText}</span>
+                <span class="status-badge ${work.status}">${work.statusText}</span>
             </div>
             <div class="work-card-meta">
                 <strong>Report:</strong> ${work.reportId}<br>
@@ -298,19 +329,6 @@ function markCompleted() {
         showAlert('Work Completed', `Work order ${currentWork.id} has been marked as completed.\n\nRedirecting to dashboard...`, 'success', () => {
             window.location.href = 'dashboard.html';
         });
-    });
-}
-
-/**
- * Flag issue
- */
-function flagIssue() {
-    if (!currentWork) return;
-
-    showPrompt('Flag Issue', 'Please describe the issue:', 'Enter issue description...', (reason) => {
-        if (reason) {
-            showAlert('Issue Flagged', `Issue flagged for work order ${currentWork.id}.\n\nReason: ${reason}\n\nThis will be reviewed by the supervisor.`, 'warning');
-        }
     });
 }
 

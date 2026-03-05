@@ -68,7 +68,7 @@ async function loadContractors() {
 // =====================================================
 function renderReportDetails(report) {
     document.getElementById('reportDetails').innerHTML = `
-        <div class="report-detail-row"><strong>Report ID:</strong> ${report.id}</div>
+        <div class="report-detail-row"><strong>Report ID:</strong> <span title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</span></div>
         <div class="report-detail-row"><strong>Location:</strong> ${report.location}</div>
         <div class="report-detail-row"><strong>Damage Type:</strong> ${report.damage_type}</div>
         <div class="report-detail-row"><strong>Severity:</strong> ${report.severity}</div>

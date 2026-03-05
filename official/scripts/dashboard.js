@@ -162,7 +162,7 @@ function renderReportsTable() {
 
         return `
             <tr>
-                <td style="font-weight: 600;">${report.id}</td>
+                <td style="font-weight: 600;" title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</td>
                 <td>${report.location}</td>
                 <td>${report.damage_type || 'Road Damage'}</td>
                 <td><span class="pill ${statusPill}">${statusText}</span></td>
