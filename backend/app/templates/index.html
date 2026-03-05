@@ -4,207 +4,1782 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Assignment & Infrastructure Reporting System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='shared/styles.css') }}">
+    <title>SafeStreets - Smart Road Damage Reporting</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
     <style>
-        body {
-            background-color: #050510;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        .hero-section {
-            flex: 1;
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* ============ NAVBAR ============ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 2rem;
+            height: 72px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            transition: box-shadow 0.3s;
+        }
+
+        .navbar.scrolled {
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .nav-logo {
+            width: 42px;
+            height: 42px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
-            text-align: center;
-            background: radial-gradient(circle at center, #1a1a2e 0%, #050510 100%);
         }
 
-        .system-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: #fff;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            background: linear-gradient(90deg, #fff, #0d6efd);
-            background-clip: text;
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .nav-link {
+            padding: 0.5rem 1rem;
+            color: #475569;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .nav-link.active {
+            color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .btn-login {
+            padding: 0.6rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-login:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #475569;
+            cursor: pointer;
+            padding: 0.5rem;
+            order: 0;
+        }
+
+        /* Mobile nav */
+        .mobile-nav-overlay {
+            display: none;
+            position: fixed;
+            top: 72px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.4);
+            z-index: 999;
+        }
+
+        .mobile-nav-overlay.active {
+            display: block;
+        }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 72px;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 1000;
+            flex-direction: column;
+            padding: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            animation: slideDown 0.2s ease;
+        }
+
+        .mobile-nav.active {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .mobile-nav .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+            border-radius: 10px;
+        }
+
+        /* ============ HERO ============ */
+        .hero {
+            padding: 120px 2rem 60px;
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            align-items: center;
+            min-height: 80vh;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #eff6ff;
+            color: #3b82f6;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.4rem 1rem;
+            border-radius: 100px;
+            border: 1px solid #bfdbfe;
+            margin-bottom: 1.25rem;
+        }
+
+        .hero-badge::before {
+            content: "⚡";
+        }
+
+        .hero h1 {
+            font-size: 3.25rem;
+            font-weight: 800;
+            line-height: 1.15;
+            color: #0f172a;
+            margin-bottom: 1.25rem;
+            letter-spacing: -0.02em;
+        }
+
+        .hero h1 span {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
             -webkit-background-clip: text;
+            background-clip: text;
             -webkit-text-fill-color: transparent;
         }
 
-        .system-subtitle {
-            font-size: 1.1rem;
-            color: #aaa;
-            margin-bottom: 3rem;
-            max-width: 600px;
+        .hero-desc {
+            font-size: 1.05rem;
+            color: #64748b;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+            max-width: 500px;
         }
 
-        .access-cards {
+        .hero-buttons {
             display: flex;
-            gap: 2rem;
+            gap: 1rem;
             flex-wrap: wrap;
-            justify-content: center;
-            max-width: 900px;
-            width: 100%;
         }
 
-        .access-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 2.5rem;
-            width: 350px;
-            text-align: center;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .access-card:hover {
-            transform: translateY(-5px);
-            border-color: #0d6efd;
-            box-shadow: 0 10px 30px rgba(13, 110, 253, 0.2);
-        }
-
-        .role-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            display: block;
-        }
-
-        .role-title {
-            font-size: 1.5rem;
+        .btn-primary-hero {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.85rem 1.75rem;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
             font-weight: 600;
-            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary-hero:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
+        }
+
+        .hero-image {
+            position: relative;
+        }
+
+        .hero-mockup {
+            width: 100%;
+            max-width: 520px;
+            background: #0f172a;
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+            margin-left: auto;
+        }
+
+        .mockup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+        }
+
+        .mockup-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .mockup-badge {
+            background: #22c55e;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+        }
+
+        .mockup-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+
+        .mockup-card {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .mockup-card-label {
+            color: #94a3b8;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-bottom: 0.4rem;
+        }
+
+        .mockup-card-value {
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .mockup-chart {
+            grid-column: span 2;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            gap: 6px;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: linear-gradient(to top, #3b82f6, #60a5fa);
+            border-radius: 4px 4px 0 0;
+            min-height: 15px;
+            transition: height 0.3s;
+        }
+
+        /* ============ STATS BAR ============ */
+        .stats-bar {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 2rem;
+        }
+
+        .stats-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        .stat-icon-box.blue {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .stat-icon-box.green {
+            background: #f0fdf4;
+            color: #22c55e;
+        }
+
+        .stat-icon-box.orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+
+        .stat-icon-box.purple {
+            background: #faf5ff;
+            color: #a855f7;
+        }
+
+        .stat-number {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        /* ============ SECTIONS ============ */
+        .section {
+            padding: 5rem 2rem;
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .section-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #3b82f6;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.75rem;
+        }
+
+        .section-title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            font-size: 1rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto 3rem;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* ============ HOW IT WORKS ============ */
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .step-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem 1.5rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .step-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            border-color: #bfdbfe;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: #eff6ff;
+            color: #3b82f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin: 0 auto 1rem;
+            border: 2px solid #bfdbfe;
+        }
+
+        .step-icon {
+            font-size: 2.5rem;
             margin-bottom: 1rem;
         }
 
-        .role-desc {
-            color: #999;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+        .step-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: #64748b;
             line-height: 1.5;
         }
 
-        .btn-access {
-            display: block;
-            width: 100%;
-            padding: 1rem;
-            border-radius: 8px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
+        /* ============ FEATURES ============ */
+        .features-section {
+            background: #f1f5f9;
+            padding: 5rem 2rem;
         }
 
-        .btn-citizen {
-            background: #0d6efd;
-            color: white;
-            box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3);
+        .features-inner {
+            max-width: 1280px;
+            margin: 0 auto;
         }
 
-        .btn-citizen:hover {
-            background: #0b5ed7;
-            transform: translateY(-2px);
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
         }
 
-        .btn-official {
-            background: transparent;
-            border: 2px solid #0d6efd;
-            color: #0d6efd;
+        .feature-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
         }
 
-        .btn-official:hover {
-            background: rgba(13, 110, 253, 0.1);
-            color: white;
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            border-color: #bfdbfe;
         }
 
-        .main-footer {
-            background: #000;
-            padding: 1.5rem;
-            text-align: center;
-            border-top: 1px solid #222;
-        }
-
-        .footer-links {
+        .feature-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
             display: flex;
+            align-items: center;
             justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .feature-icon.fi-blue {
+            background: #eff6ff;
+        }
+
+        .feature-icon.fi-green {
+            background: #f0fdf4;
+        }
+
+        .feature-icon.fi-orange {
+            background: #fff7ed;
+        }
+
+        .feature-icon.fi-purple {
+            background: #faf5ff;
+        }
+
+        .feature-icon.fi-teal {
+            background: #f0fdfa;
+        }
+
+        .feature-icon.fi-rose {
+            background: #fff1f2;
+        }
+
+        .feature-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-desc {
+            font-size: 0.875rem;
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        /* ============ FOR CITIZENS / OFFICIALS ============ */
+        .roles-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 2rem;
+        }
+
+        .role-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s;
+        }
+
+        .role-card:hover {
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .role-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+
+        .role-card-icon.rci-blue {
+            background: #eff6ff;
+        }
+
+        .role-card-icon.rci-indigo {
+            background: #eef2ff;
+        }
+
+        .role-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .role-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+        }
+
+        .role-list li {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+        }
+
+        .role-list-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: #f0fdf4;
+            color: #22c55e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .role-list-content strong {
+            display: block;
+            font-size: 0.9rem;
+            color: #0f172a;
+            font-weight: 600;
+            margin-bottom: 0.15rem;
+        }
+
+        .role-list-content span {
+            font-size: 0.82rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* ============ CTA BANNER ============ */
+        .cta-banner {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+            padding: 4rem 2rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        .cta-banner h2 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.01em;
+        }
+
+        .cta-banner p {
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            max-width: 550px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-cta-primary {
+            padding: 0.85rem 2rem;
+            background: white;
+            color: #2563eb;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-cta-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-cta-secondary {
+            padding: 0.85rem 2rem;
+            background: transparent;
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: white;
+        }
+
+        /* ============ FOOTER ============ */
+        .footer {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 3rem 2rem 1.5rem;
+        }
+
+        .footer-content {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1fr;
+            gap: 2.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
             margin-bottom: 1rem;
         }
 
-        .footer-links a {
-            color: #666;
+        .footer-logo {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .footer-brand-name {
+            font-weight: 700;
+            color: #0f172a;
+            font-size: 0.95rem;
+        }
+
+        .footer-desc {
+            font-size: 0.85rem;
+            color: #64748b;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .footer-social a {
+            width: 36px;
+            height: 36px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
             text-decoration: none;
             font-size: 0.9rem;
+            transition: all 0.2s;
         }
 
-        .footer-links a:hover {
-            color: #0d6efd;
+        .footer-social a:hover {
+            background: #3b82f6;
+            color: white;
         }
 
-        .disclaimer {
-            color: #444;
+        .footer-col-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-links {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .footer-links li a {
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+        .footer-links li a:hover {
+            color: #3b82f6;
+        }
+
+        .footer-bottom {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-copyright {
             font-size: 0.8rem;
+            color: #94a3b8;
+        }
+
+        .footer-bottom-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+
+        .footer-bottom-links a {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .footer-bottom-links a:hover {
+            color: #3b82f6;
+        }
+
+        /* ============ LOGIN MODAL ============ */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .login-modal {
+            background: white;
+            border-radius: 24px;
+            padding: 3rem;
+            width: 90%;
+            max-width: 480px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.15);
+            animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            text-align: center;
+            position: relative;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-close-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #f1f5f9;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .login-modal h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .login-modal .modal-subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .role-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .role-option {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2rem 1.25rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .role-option:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+        }
+
+        .role-option-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+        }
+
+        .role-option-icon.citizen-icon {
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .role-option-icon.officer-icon {
+            background: #faf5ff;
+            color: #8b5cf6;
+        }
+
+        .role-option-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .role-option-desc {
+            font-size: 0.8rem;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        /* ============ RESPONSIVE — TABLET ============ */
+        @media (max-width: 1024px) {
+            .navbar {
+                padding: 0 1.5rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .hero {
+                grid-template-columns: 1fr;
+                text-align: center;
+                padding: 100px 1.5rem 40px;
+                min-height: auto;
+                gap: 2rem;
+            }
+
+            .hero-desc {
+                margin: 0 auto 2rem;
+            }
+
+            .hero-buttons {
+                justify-content: center;
+            }
+
+            .hero-image {
+                max-width: 440px;
+                margin: 0 auto;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .steps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .section {
+                padding: 3.5rem 1.5rem;
+            }
+
+            .features-section {
+                padding: 3.5rem 1.5rem;
+            }
+
+            /* Mobile navbar order: ☰ Logo ... Login */
+            .nav-left {
+                order: 0;
+            }
+
+            .nav-right {
+                order: 2;
+                margin-left: auto;
+            }
+        }
+
+        /* ============ RESPONSIVE — MOBILE ============ */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 1rem;
+                height: 64px;
+            }
+
+            .nav-logo {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+            }
+
+            .btn-login {
+                padding: 0.5rem 1.25rem;
+                font-size: 0.85rem;
+            }
+
+            .mobile-nav {
+                top: 64px;
+            }
+
+            .mobile-nav-overlay {
+                top: 64px;
+            }
+
+            .hero {
+                padding: 84px 1rem 30px;
+                gap: 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .hero-badge {
+                font-size: 0.7rem;
+                padding: 0.3rem 0.75rem;
+            }
+
+            .hero-desc {
+                font-size: 0.95rem;
+            }
+
+            .btn-primary-hero {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            .hero-mockup {
+                padding: 1rem;
+                border-radius: 16px;
+            }
+
+            .mockup-card-value {
+                font-size: 1.1rem;
+            }
+
+            .mockup-chart {
+                height: 80px;
+            }
+
+            .stats-bar {
+                padding: 1.5rem 1rem;
+            }
+
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.25rem;
+            }
+
+            .stat-number {
+                font-size: 1.5rem;
+            }
+
+            .section {
+                padding: 3rem 1rem;
+            }
+
+            .features-section {
+                padding: 3rem 1rem;
+            }
+
+            .section-title {
+                font-size: 1.75rem;
+            }
+
+            .section-subtitle {
+                font-size: 0.9rem;
+                margin-bottom: 2rem;
+            }
+
+            .steps-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .step-card {
+                padding: 1.5rem 1rem;
+            }
+
+            .step-icon {
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .feature-card {
+                padding: 1.5rem;
+            }
+
+            .roles-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .role-card {
+                padding: 2rem 1.5rem;
+            }
+
+            .cta-banner {
+                padding: 3rem 1rem;
+                margin-top: 2rem;
+            }
+
+            .cta-banner h2 {
+                font-size: 1.5rem;
+            }
+
+            .cta-banner p {
+                font-size: 0.9rem;
+            }
+
+            .btn-cta-primary,
+            .btn-cta-secondary {
+                padding: 0.75rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            .footer {
+                padding: 2rem 1rem 1rem;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .footer-bottom {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .login-modal {
+                padding: 2rem 1.5rem;
+            }
+
+            .role-options {
+                grid-template-columns: 1fr 1fr;
+                gap: 0.75rem;
+            }
+
+            .role-option {
+                padding: 1.5rem 1rem;
+            }
+        }
+
+        /* ============ RESPONSIVE — SMALL PHONES ============ */
+        @media (max-width: 420px) {
+            .hero h1 {
+                font-size: 1.65rem;
+            }
+
+            .hero-desc {
+                font-size: 0.88rem;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            .stat-icon-box {
+                width: 40px;
+                height: 40px;
+                font-size: 1.1rem;
+            }
+
+            .stat-number {
+                font-size: 1.3rem;
+            }
+
+            .stat-label {
+                font-size: 0.7rem;
+            }
+
+            .steps-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .cta-banner h2 {
+                font-size: 1.3rem;
+            }
+
+            .role-options {
+                grid-template-columns: 1fr;
+            }
+
+            .login-modal {
+                padding: 1.5rem 1rem;
+                border-radius: 16px;
+            }
         }
     </style>
 </head>
 
 <body>
-
-    <header
-        style="padding: 1.5rem; background: rgba(0,0,0,0.5); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-            <div
-                style="width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #000;">
-                🏛️</div>
-            <div style="color: #fff; font-weight: 600; letter-spacing: 0.5px;">OFFICIAL MUNICIPAL PORTAL</div>
+    <!-- ============ NAVBAR ============ -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-left">
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="Toggle menu">☰</button>
+            <a href="/" class="nav-brand">
+                <div class="nav-logo">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                        <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
+                        <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
+                        <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
+                    </svg>
+                </div>
+            </a>
         </div>
-    </header>
 
-    <div class="hero-section">
-        <h1 class="system-title">Work Assignment & Infrastructure Reporting System</h1>
-        <p class="system-subtitle">A centralized platform for citizens to report infrastructure issues and for
-            government officials to manage repairs efficiently.</p>
+        <div class="nav-links">
+            <a href="#" class="nav-link active">Home</a>
+            <a href="#how-it-works" class="nav-link">About</a>
+            <a href="#features" class="nav-link">Citizen Services</a>
+            <a href="#roles" class="nav-link">Infrastructure Reports</a>
+            <a href="#cta" class="nav-link">Public Safety</a>
+        </div>
 
-        <div class="access-cards">
-            <!-- Citizen Card -->
-            <div class="access-card">
-                <span class="role-icon">📱</span>
-                <h2 class="role-title">Citizen Access</h2>
-                <p class="role-desc">Report road damage, potholes, or infrastructure issues directly. Track the status
-                    of your reports in real-time.</p>
-                <!-- Links need to be compatible with Static Folder config -->
-                <a href="citizen/login.html" class="btn-access btn-citizen">Report Infrastructure Damage</a>
+        <div class="nav-right">
+            <button class="btn-login" onclick="openLoginModal()">Login</button>
+        </div>
+    </nav>
+
+    <!-- Mobile navigation -->
+    <div class="mobile-nav-overlay" id="mobileOverlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="#" class="nav-link active" onclick="closeMobileMenu()">Home</a>
+        <a href="#how-it-works" class="nav-link" onclick="closeMobileMenu()">About</a>
+        <a href="#features" class="nav-link" onclick="closeMobileMenu()">Citizen Services</a>
+        <a href="#roles" class="nav-link" onclick="closeMobileMenu()">Infrastructure Reports</a>
+        <a href="#cta" class="nav-link" onclick="closeMobileMenu()">Public Safety</a>
+    </div>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">AI POWERED ROAD ANALYTICS</div>
+            <h1><span>SafeStreets</span></h1>
+            <p class="hero-desc">
+                Elevating Solapur's infrastructure with real-time AI pothole
+                detection, automated repair workflows, and comprehensive
+                citizen engagement.
+            </p>
+            <div class="hero-buttons">
+                <a href="citizen/login.html" class="btn-primary-hero">
+                    🚧 Report Road Damage
+                </a>
             </div>
+        </div>
 
-            <!-- Official Card -->
-            <div class="access-card">
-                <span class="role-icon">🛡️</span>
-                <h2 class="role-title">Official Access</h2>
-                <p class="role-desc">For authorized government personnel only. Verify reports, assign contractors, and
-                    manage work orders.</p>
-                <a href="official/login.html" class="btn-access btn-official">Official Login</a>
+        <div class="hero-image">
+            <div class="hero-mockup">
+                <div class="mockup-header">
+                    <span class="mockup-title">Smart City</span>
+                    <span class="mockup-badge">● Live</span>
+                </div>
+                <div class="mockup-grid">
+                    <div class="mockup-card">
+                        <div class="mockup-card-label">Reports Today</div>
+                        <div class="mockup-card-value">24</div>
+                    </div>
+                    <div class="mockup-card">
+                        <div class="mockup-card-label">Repairs Active</div>
+                        <div class="mockup-card-value">8</div>
+                    </div>
+                    <div class="mockup-card">
+                        <div class="mockup-card-label">AI Accuracy</div>
+                        <div class="mockup-card-value">96%</div>
+                    </div>
+                    <div class="mockup-card">
+                        <div class="mockup-card-label">Areas Covered</div>
+                        <div class="mockup-card-value">42</div>
+                    </div>
+                    <div class="mockup-chart">
+                        <div class="chart-bar" style="height: 40%"></div>
+                        <div class="chart-bar" style="height: 65%"></div>
+                        <div class="chart-bar" style="height: 45%"></div>
+                        <div class="chart-bar" style="height: 80%"></div>
+                        <div class="chart-bar" style="height: 55%"></div>
+                        <div class="chart-bar" style="height: 90%"></div>
+                        <div class="chart-bar" style="height: 70%"></div>
+                        <div class="chart-bar" style="height: 60%"></div>
+                        <div class="chart-bar" style="height: 85%"></div>
+                        <div class="chart-bar" style="height: 50%"></div>
+                        <div class="chart-bar" style="height: 75%"></div>
+                        <div class="chart-bar" style="height: 65%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ STATS BAR (DYNAMIC) ============ -->
+    <div class="stats-bar">
+        <div class="stats-container">
+            <div class="stat-item">
+                <div class="stat-icon-box blue">📋</div>
+                <div>
+                    <div class="stat-number" id="stat-total">0</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-box green">✅</div>
+                <div>
+                    <div class="stat-number" id="stat-fixed">0</div>
+                    <div class="stat-label">Fixed</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-box orange">🔧</div>
+                <div>
+                    <div class="stat-number" id="stat-active">0</div>
+                    <div class="stat-label">Active Reports</div>
+                </div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-icon-box purple">👷</div>
+                <div>
+                    <div class="stat-number" id="stat-contractors">0</div>
+                    <div class="stat-label">Contractors</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <footer class="main-footer">
-        <div class="footer-links">
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Use</a>
-            <a href="#">Accessibility</a>
-            <a href="#">Contact Support</a>
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="section text-center" id="how-it-works">
+        <div class="section-badge">A SIMPLE PROCESS</div>
+        <h2 class="section-title">How the System Works</h2>
+        <p class="section-subtitle">A seamless 4-step process from issue detection to final resolution</p>
+
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-icon">📱</div>
+                <h3 class="step-title">1. Report</h3>
+                <p class="step-desc">Citizens capture road damage using their phone's camera and submit GPS-tagged
+                    reports.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-icon">🤖</div>
+                <h3 class="step-title">2. AI Detection</h3>
+                <p class="step-desc">Our AI instantly categorizes the severity of the damage and classifies it by type.
+                </p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-icon">✔️</div>
+                <h3 class="step-title">3. Verification</h3>
+                <p class="step-desc">Govt. officials verify reports and prioritize them based on severity & location.
+                </p>
+            </div>
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <div class="step-icon">🔨</div>
+                <h3 class="step-title">4. Repair</h3>
+                <p class="step-desc">Contractors receive work orders and repairs are tracked to completion.</p>
+            </div>
         </div>
-        <div class="disclaimer">
-            &copy; 2024 Municipal Corporation. All rights reserved. | Official Government System
+    </section>
+
+    <!-- ============ FEATURES ============ -->
+    <section class="features-section" id="features">
+        <div class="features-inner">
+            <div class="text-center">
+                <div class="section-badge">ADVANCED CAPABILITIES</div>
+                <h2 class="section-title">System Features</h2>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon fi-blue">🧠</div>
+                    <h3 class="feature-title">AI Detection</h3>
+                    <p class="feature-desc">Advanced neural networks identify pothole patterns, crack formations, and
+                        surface deterioration with high accuracy.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon fi-green">📡</div>
+                    <h3 class="feature-title">Real-Time Tracking</h3>
+                    <p class="feature-desc">Live dashboards for citizens and officials to track report statuses and
+                        repair operations in real-time.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon fi-orange">📍</div>
+                    <h3 class="feature-title">GPS Reporting</h3>
+                    <p class="feature-desc">Precise GPS tagging while you report road damage ensures faster response
+                        from nearby maintenance crews.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon fi-purple">🏗️</div>
+                    <h3 class="feature-title">Contractor Assignment</h3>
+                    <p class="feature-desc">Intelligent dispatch of verified contractors to nearby job sites, with
+                        schedules and deadlines.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon fi-teal">🔍</div>
+                    <h3 class="feature-title">Transparency</h3>
+                    <p class="feature-desc">Public facing status on resolution timelines and performance metrics for
+                        complete accountability.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon fi-rose">📊</div>
+                    <h3 class="feature-title">Smart Monitoring</h3>
+                    <p class="feature-desc">Automated health monitoring of infrastructure sections and predictive
+                        maintenance analytics.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ FOR CITIZENS / OFFICIALS ============ -->
+    <section class="section" id="roles">
+        <div class="roles-grid">
+            <div class="role-card">
+                <div class="role-card-header">
+                    <div class="role-card-icon rci-blue">👤</div>
+                    <h3 class="role-card-title">For Citizens</h3>
+                </div>
+                <ul class="role-list">
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Easy Reporting</strong>
+                            <span>Submit road reports using your phone camera with AI analysis.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Faster Response</strong>
+                            <span>Automated workflows ensure response times drop up to 60%.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Community Engagement</strong>
+                            <span>Track reports, view neighborhood health, and get notified on repairs.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="role-card">
+                <div class="role-card-header">
+                    <div class="role-card-icon rci-indigo">🏛️</div>
+                    <h3 class="role-card-title">For Officials</h3>
+                </div>
+                <ul class="role-list">
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Centralized Management</strong>
+                            <span>Access and manage all reports from a unified dashboard.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Data Driven Priorities</strong>
+                            <span>AI-driven analytics to classify damage and resources more efficiently.</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="role-list-icon">✓</div>
+                        <div class="role-list-content">
+                            <strong>Resource Optimization</strong>
+                            <span>Smart contractor dispatch saves costs and delivers faster repairs.</span>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ CTA BANNER ============ -->
+    <section class="cta-banner" id="cta">
+        <h2>Help Improve Solapur's Roads</h2>
+        <p>Join your fellow citizens in reporting infrastructure issues and building a safer, cleaner city for everyone.
+        </p>
+        <div class="cta-buttons">
+            <a href="citizen/login.html" class="btn-cta-primary">Report Road Damage</a>
+            <a href="#features" class="btn-cta-secondary">Citizen Services</a>
+        </div>
+    </section>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+                            <rect x="2" y="6" width="5" height="16" rx="1.5" fill="#2563eb" />
+                            <rect x="10" y="2" width="5" height="20" rx="1.5" fill="#2563eb" opacity="0.7" />
+                            <rect x="18" y="9" width="5" height="13" rx="1.5" fill="#2563eb" opacity="0.5" />
+                        </svg>
+                    </div>
+                    <span class="footer-brand-name">SafeStreets</span>
+                </div>
+                <p class="footer-desc">
+                    Driving technological innovation for a smarter and improved city. A unified system for
+                    citizen-driven infrastructure management.
+                </p>
+                <div class="footer-social">
+                    <a href="#" title="Facebook">f</a>
+                    <a href="#" title="Twitter">𝕏</a>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">Navigation</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Home</a></li>
+                    <li><a href="#how-it-works">About</a></li>
+                    <li><a href="#features">Services</a></li>
+                    <li><a href="#roles">Official Dashboard</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">Resources</h4>
+                <ul class="footer-links">
+                    <li><a href="#">Documentation</a></li>
+                    <li><a href="#">API Reference</a></li>
+                    <li><a href="#">Status Page</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="footer-col-title">Contact Us</h4>
+                <ul class="footer-links">
+                    <li><a href="#">📞 1800-40-0001</a></li>
+                    <li><a href="#">✉️ support@solapurmc.gov.in</a></li>
+                    <li><a href="#">📍 Solapur, Maharashtra</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span class="footer-copyright">© 2024 SafeStreets. Smart Road Infra Management System.</span>
+            <div class="footer-bottom-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+            </div>
         </div>
     </footer>
 
+    <!-- ============ LOGIN ROLE MODAL ============ -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-modal">
+            <button class="modal-close-btn" onclick="closeLoginModal()">✕</button>
+            <h2>Choose Your Role</h2>
+            <p class="modal-subtitle">Select how you'd like to sign in</p>
+            <div class="role-options">
+                <a href="citizen/login.html" class="role-option">
+                    <div class="role-option-icon citizen-icon">👤</div>
+                    <div class="role-option-title">Citizen</div>
+                    <div class="role-option-desc">Report issues & track repairs</div>
+                </a>
+                <a href="official/login.html" class="role-option">
+                    <div class="role-option-icon officer-icon">🛡️</div>
+                    <div class="role-option-title">Officer</div>
+                    <div class="role-option-desc">Manage reports & assign work</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 20);
+        });
+
+        // Login modal
+        function openLoginModal() {
+            document.getElementById('loginModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('loginModal').addEventListener('click', function (e) {
+            if (e.target === this) closeLoginModal();
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeLoginModal();
+                closeMobileMenu();
+            }
+        });
+
+        // Mobile menu
+        function toggleMobileMenu() {
+            document.getElementById('mobileNav').classList.toggle('active');
+            document.getElementById('mobileOverlay').classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobileNav').classList.remove('active');
+            document.getElementById('mobileOverlay').classList.remove('active');
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const id = this.getAttribute('href');
+                if (id === '#') return;
+                e.preventDefault();
+                const el = document.querySelector(id);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+
+        // ============ DYNAMIC STATS ============
+        function animateNumber(el, target) {
+            const duration = 1200;
+            const start = performance.now();
+            const update = (now) => {
+                const progress = Math.min((now - start) / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.round(eased * target).toLocaleString();
+                if (progress < 1) requestAnimationFrame(update);
+            };
+            requestAnimationFrame(update);
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/landing-stats');
+                if (!res.ok) throw new Error('API error');
+                const data = await res.json();
+                animateNumber(document.getElementById('stat-total'), data.total_reports);
+                animateNumber(document.getElementById('stat-fixed'), data.fixed);
+                animateNumber(document.getElementById('stat-active'), data.active_reports);
+                animateNumber(document.getElementById('stat-contractors'), data.contractors);
+            } catch (err) {
+                console.warn('Could not load landing stats:', err);
+            }
+        }
+
+        const statsBar = document.querySelector('.stats-bar');
+        let statsLoaded = false;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !statsLoaded) {
+                    statsLoaded = true;
+                    loadStats();
+                    observer.disconnect();
+                }
+            });
+        }, { threshold: 0.2 });
+        observer.observe(statsBar);
+    </script>
 </body>
 
 </html>

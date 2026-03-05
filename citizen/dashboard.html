@@ -29,6 +29,15 @@
     ========================================================== -->
     <header class="top-bar">
         <div class="top-bar__left">
+            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
+                aria-expanded="false">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
             <div class="top-bar__brand">
                 <div class="top-bar__logo">
                     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
@@ -44,15 +53,6 @@
                 <a href="report-damage.html" class="top-nav-link" id="nav-report">Report Damage</a>
                 <a href="map.html" class="top-nav-link" id="nav-map">Map</a>
             </nav>
-            <button class="hamburger-btn" id="hamburgerBtn" onclick="toggleMobileNav()" aria-label="Toggle navigation"
-                aria-expanded="false">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
         </div>
         <div class="top-bar__right">
             <div class="top-bar__user-info">
@@ -98,7 +98,7 @@
             <div class="page-header__text">
                 <!-- <h1 class="page-header__title">Citizen Dashboard</h1> -->
                 <!-- <p class="page-header__subtitle">Welcome back. Here is an overview of your reports.</p> -->
-            </div> 
+            </div>
             <button class="btn btn-primary btn-report" onclick="window.location.href='report-damage.html'"
                 id="reportNewIssueBtn">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
