@@ -132,7 +132,7 @@ async function startRealtime(facingMode) {
         rtCanvas.width = video.videoWidth;
         rtCanvas.height = video.videoHeight;
         rtCtx = rtCanvas.getContext('2d');
-        rtInterval = setInterval(sendRealtimeFrame, 100); // 5 fps
+        rtInterval = setInterval(sendRealtimeFrame, 100); // every 1 second
     };
 }
 

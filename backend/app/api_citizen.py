@@ -5,6 +5,7 @@ from app.models import DamageReport
 from app import db
 from app.utils import log_audit
 from app.ml_utils import detect_damage, detect_damage_with_image, detect_video_full, detect_video_to_file
+from app.ml_utils import detect_damage_with_frame
 import os
 import cv2
 import numpy as np
@@ -71,21 +72,24 @@ def detect_only():
 @citizen_bp.route('/detect-frame', methods=['POST'])
 def detect_frame():
     """
-    Accepts a base64-encoded JPEG frame from the webcam.
-    Returns damage detection result for that single frame.
-    When damage is detected, automatically saves a report to the DB.
+    Realtime dashcam detection endpoint.
+    Receives base64 frame → runs ML detection → returns result.
+    No disk I/O for speed.
     """
+
     data = request.get_json()
-    if not data or 'frame' not in data:
+
+    if not data or "frame" not in data:
         return jsonify({"msg": "No frame provided"}), 400
 
-    user_id = get_jwt_identity()
-
     try:
-        # Decode base64 frame
-        frame_data = data['frame']
-        if ',' in frame_data:
-            frame_data = frame_data.split(',')[1]
+        frame_data = data["frame"]
+
+        # Remove base64 header if present
+        if "," in frame_data:
+            frame_data = frame_data.split(",")[1]
+
+        # Decode base64 → numpy image
         frame_bytes = base64.b64decode(frame_data)
         nparr = np.frombuffer(frame_bytes, np.uint8)
         frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -93,20 +97,18 @@ def detect_frame():
         if frame is None:
             return jsonify({"msg": "Failed to decode frame"}), 400
 
-        # Save temp frame for detection
-        temp_dir = os.path.join(current_app.config['UPLOAD_FOLDER'], 'temp')
-        os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"frame_{user_id}_{int(time.time())}.jpg")
-        cv2.imwrite(temp_path, frame)
+        # Resize for faster inference
+        frame = cv2.resize(frame, (416, 416))
 
-        damage, confidence, annotated_b64 = detect_damage_with_image(temp_path)
-        detected = damage not in ("No Damage", "Model Error", "Detection Error", "Image Not Found")
+        # Run detection
+        damage, confidence, annotated_b64 = detect_damage_with_frame(frame)
 
-        # Cleanup temp
-        try:
-            os.remove(temp_path)
-        except Exception:
-            pass
+        detected = damage not in (
+            "No Damage",
+            "Model Error",
+            "Detection Error",
+            "Image Not Found",
+        )
 
         return jsonify({
             "damage_type": damage,
