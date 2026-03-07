@@ -291,7 +291,7 @@ Open the link in a browser to access the platform.
 
 # 📂 Project Structure
 
-
+```
 rdd2-c
 │
 ├── backend
@@ -332,7 +332,7 @@ rdd2-c
     ├── Notice.pdf
     ├── Notice2.pdf
     └── Notice3.pdf
-
+```
 
 ---
 
