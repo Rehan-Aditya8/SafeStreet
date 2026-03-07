@@ -223,8 +223,8 @@
         }
 
         .mock-dashboard {
-            width: 100%;
-            max-width: 480px;
+            width: 19em;
+            max-width: 100%;
             background: #111827;
             border-radius: 20px;
             box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
@@ -1060,6 +1060,11 @@
             .roles .role-box {
                 padding: 2.5rem 1.5rem;
             }
+            .footer-bottom {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
         }
     </style>
 </head>
@@ -1412,6 +1417,16 @@
             if (e.target === this) {
                 closeLoginModal();
             }
+        });
+        // Dynamic navbar active state
+        var navLinks = document.querySelectorAll('.nav-links a');
+        navLinks.forEach(function (link) {
+            link.addEventListener('click', function () {
+                navLinks.forEach(function (l) {
+                    l.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
         });
     </script>
 </body>
