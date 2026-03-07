@@ -109,6 +109,11 @@ let rtCanvas = null;
 let rtCtx = null;
 let rtCurrentFacingMode = 'environment'; // 'environment' = back, 'user' = front
 
+// Dynamic FPS control
+let rtDynamicDelay = 300;     // starting delay (~3 FPS)
+const rtMinDelay = 200;       // max speed (~5 FPS)
+const rtMaxDelay = 900;       // slowest (~1 FPS)
+
 // 4 seconds cool down period
 // 4 seconds cool down period
 let rtLastDetectionTime = 0;
@@ -162,10 +167,14 @@ async function startRealtime(facingMode) {
 
     // Wait for video to be ready then start polling
     video.onloadedmetadata = () => {
-        rtCanvas.width = video.videoWidth;
-        rtCanvas.height = video.videoHeight;
+
+        // Reduce resolution for faster detection
+        rtCanvas.width = 416;
+        rtCanvas.height = 416;
+
         rtCtx = rtCanvas.getContext('2d');
-        rtInterval = setInterval(sendRealtimeFrame, 100); // 5 FPS.
+
+        startRealtimeLoop(); // start adaptive loop
     };
 }
 
@@ -400,11 +409,14 @@ async function switchCamera() {
         video.srcObject = rtStream;
 
         video.onloadedmetadata = () => {
-            rtCanvas.width = video.videoWidth;
-            rtCanvas.height = video.videoHeight;
+
+            // Reduce resolution for faster detection
+            rtCanvas.width = 416;
+            rtCanvas.height = 416;
+
             rtCtx = rtCanvas.getContext('2d');
-            rtInterval = setInterval(sendRealtimeFrame, 100);
-            switchBtn.disabled = false;
+
+            startRealtimeLoop(); // start adaptive loop
         };
     } catch (err) {
         showAlert("Camera Error", "Could not switch camera: " + err.message, "error");
@@ -591,6 +603,27 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
     return R * c;
+}
+
+async function startRealtimeLoop() {
+
+    if (!rtIsRunning) return;
+
+    const start = performance.now();
+
+    await sendRealtimeFrame();
+
+    const elapsed = performance.now() - start;
+
+    // Adjust delay based on processing time
+    if (elapsed > 600) {
+        rtDynamicDelay = Math.min(rtDynamicDelay + 100, rtMaxDelay);
+    } 
+    else if (elapsed < 300) {
+        rtDynamicDelay = Math.max(rtDynamicDelay - 50, rtMinDelay);
+    }
+
+    setTimeout(startRealtimeLoop, rtDynamicDelay);
 }
 
 // Global exposure

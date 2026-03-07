@@ -62,10 +62,17 @@ function initReportForm() {
                 setAllLocationDisplays(gpsData.locationText);
             },
             (error) => {
-                gpsData.locationText = 'Location permission REQUIRED';
-                setAllLocationDisplays(gpsData.locationText);
-                showAlert("Location Required", "Please enable GPS and allow precise location.", "warning");
-            },
+            console.log("Geolocation error:", error);
+            
+            gpsData.locationText = 'Location permission REQUIRED';
+            setAllLocationDisplays(gpsData.locationText);
+
+            showAlert(
+                "Location Required",
+                "Please enable GPS and allow precise location. Error: " + error.message,
+                "warning"
+            );
+        },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
     } else {
@@ -132,7 +139,7 @@ async function startRealtime(facingMode) {
         rtCanvas.width = video.videoWidth;
         rtCanvas.height = video.videoHeight;
         rtCtx = rtCanvas.getContext('2d');
-        rtInterval = setInterval(sendRealtimeFrame, 100); // every 1 second
+        rtInterval = setInterval(sendRealtimeFrame, 1000); // every 1 second
     };
 }
 
@@ -282,7 +289,7 @@ async function switchCamera() {
             rtCanvas.width = video.videoWidth;
             rtCanvas.height = video.videoHeight;
             rtCtx = rtCanvas.getContext('2d');
-            rtInterval = setInterval(sendRealtimeFrame, 100);
+            rtInterval = setInterval(sendRealtimeFrame, 1000);
             switchBtn.disabled = false;
         };
     } catch (err) {

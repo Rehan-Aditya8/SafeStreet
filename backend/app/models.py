@@ -89,23 +89,9 @@ class WorkReport(db.Model):
     contractor_contact = db.Column(db.String(50))
 
     status = db.Column(db.String(20), default='pending')
-    pdf_filename = db.Column(db.String(255))
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    pdf_filename = db.Column(db.String(255)) 
 
-
-# =====================================================
-# CONTRACTOR MODEL (WORK DB)
-# =====================================================
-class Contractor(db.Model):
-    __tablename__ = 'contractors'
-    __bind_key__ = 'infra_work_db'
-
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(100), nullable=False)
-    specialization = db.Column(db.String(100))
-    contact = db.Column(db.String(100))
-    rating = db.Column(db.Float, default=0.0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
