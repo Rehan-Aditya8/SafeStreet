@@ -125,6 +125,7 @@ let rtSessionStartTime = null;
 
 // Interval after which dashcam detections are grouped into a single report
 const RT_REPORT_INTERVAL = 30000; // 30 seconds
+const RT_CONF_THRESHOLD = 0.4;
 
 
 function initRealtimeTab() {
@@ -149,17 +150,41 @@ async function startRealtime(facingMode) {
     }
 
     const video = document.getElementById('webcamVideo');
-    video.srcObject = rtStream;
-    video.style.display = 'block';
-    document.getElementById('webcamPlaceholder').style.display = 'none';
-    document.getElementById('liveBadge').style.display = 'flex';
-    document.getElementById('detectionOverlay').style.display = 'block';
+    if (video) {
+        video.srcObject = rtStream;
+        video.style.display = 'block';
+    }
 
-    // document.getElementById('rtStartBtn').style.display = 'none';
-    document.getElementById('rtStopBtn').style.display = 'block';
-    document.getElementById('rtSwitchBtn').style.display = 'block';
-    document.getElementById('rtStatus').textContent = 'Active';
-    document.getElementById('rtStatus').style.color = '#22c55e';
+    const placeholder = document.getElementById('webcamPlaceholder');
+    if (placeholder) {
+        placeholder.style.display = 'none';
+    }
+
+    const liveBadge = document.getElementById('liveBadge');
+    if (liveBadge) {
+        liveBadge.style.display = 'flex';
+    }
+
+    const overlay = document.getElementById('detectionOverlay');
+    if (overlay) {
+        overlay.style.display = 'block';
+    }
+
+    const stopBtn = document.getElementById('rtStopBtn');
+    if (stopBtn) {
+        stopBtn.style.display = 'block';
+    }
+
+    const switchBtn = document.getElementById('rtSwitchBtn');
+    if (switchBtn) {
+        switchBtn.style.display = 'none';
+    }
+
+    const statusEl = document.getElementById('rtStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Active';
+        statusEl.style.color = '#22c55e';
+    }
 
     rtIsRunning = true;
     rtTotalDetections = 0;
@@ -179,9 +204,10 @@ async function startRealtime(facingMode) {
 }
 
 async function sendRealtimeFrame() {
-    if (!rtIsRunning) return;
 
+    if (!rtIsRunning) return;
     if (rtRequestInFlight) return;
+
     rtRequestInFlight = true;
 
     const video = document.getElementById('webcamVideo');
@@ -191,13 +217,15 @@ async function sendRealtimeFrame() {
         return;
     }
 
+    // Capture frame
     rtCtx.drawImage(video, 0, 0, rtCanvas.width, rtCanvas.height);
-    const frameData = rtCanvas.toDataURL('image/jpeg', 0.7);
+    const frameData = rtCanvas.toDataURL('image/jpeg', 0.5);
 
     rtFramesSent++;
     document.getElementById('rtFrames').textContent = rtFramesSent;
 
     try {
+
         const res = await fetch("/api/dashcam/detect-frame", {
             method: "POST",
             headers: {
@@ -214,62 +242,123 @@ async function sendRealtimeFrame() {
 
         const data = await res.json();
 
-        if (res.ok) {
+        if (!res.ok) return;
 
-            if (data.detected) {
-
-                const now = Date.now();
-
-                if (now - rtLastDetectionTime > RT_DETECTION_COOLDOWN) {
-
-                    rtLastDetectionTime = now;
-
-                    rtTotalDetections++;
-                    document.getElementById('rtTotal').textContent = rtTotalDetections;
-
-                    updateRealtimeOverlay(data);
-
-                    const currentLat = gpsData.lat;
-                    const currentLng = gpsData.lng;
-
-                    if (!currentLat || !currentLng) return;
-
-                    if (!rtDetectionSession || data.confidence > rtDetectionSession.confidence) {
-
-                        rtDetectionSession = {
-                            damage_type: data.damage_type,
-                            confidence: data.confidence,
-                            annotated_image: data.annotated_image
-                        };
-
-                        rtSessionStartTime = Date.now();
-
-                        console.log("Detection session started");
-
-                        return;
-                    }
-
-                    const elapsed = Date.now() - rtSessionStartTime;
-
-                    if (elapsed >= RT_REPORT_INTERVAL) {
-
-                        console.log("Auto submitting dashcam report after 30 seconds");
-
-                        autoSubmitDashcamReport(rtDetectionSession);
-
-                        rtDetectionSession = null;
-                        rtSessionStartTime = null;
-                    }
-                }
-
-            } else {
-                updateRealtimeOverlay(data);
-            }
+        if (!data.detected) {
+            updateRealtimeOverlay(data);
+            return;
         }
 
-    } catch (err) {
+        const now = Date.now();
+
+        // Cooldown between detections
+        if (now - rtLastDetectionTime < RT_DETECTION_COOLDOWN) return;
+
+        rtLastDetectionTime = now;
+
+        rtTotalDetections++;
+        document.getElementById('rtTotal').textContent = rtTotalDetections;
+
+        updateRealtimeOverlay(data);
+
+        const currentLat = gpsData.lat;
+        const currentLng = gpsData.lng;
+
+        // Skip if GPS not ready
+        if (currentLat == null || currentLng == null) return;
+
+        // Ignore low confidence
+        if (data.confidence < RT_CONF_THRESHOLD) return;
+
+        // Start detection session
+        if (!rtDetectionSession) {
+
+            rtDetectionSession = {
+                first_damage: {
+                    damage_type: data.damage_type,
+                    confidence: data.confidence,
+                    image: data.annotated_image,
+                    lat: currentLat,
+                    lng: currentLng,
+                    text: gpsData.locationText
+                },
+                last_damage: null,
+                intermediate_locations: [],
+                valid_detections: 0
+            };
+
+            rtSessionStartTime = Date.now();
+
+            console.log("Dashcam detection session started");
+        }
+
+        // // Prevent very large payloads
+        // if (rtDetectionSession.intermediate_locations.length >= 50) return;
+
+        // const lastLoc = rtDetectionSession.intermediate_locations.slice(-1)[0];
+
+        // // Only store location if vehicle moved enough
+        // if (
+        //     !lastLoc ||
+        //     calculateDistance(lastLoc.lat, lastLoc.lng, currentLat, currentLng) > 8
+        // ) {
+
+        //     if (rtDetectionSession) {
+        //         rtDetectionSession.valid_detections++;
+        //     }
+
+        //     rtDetectionSession.intermediate_locations.push({
+        //         lat: currentLat,
+        //         lng: currentLng,
+        //         confidence: data.confidence
+        //     });
+        // }
+
+        // Count every valid detection
+        rtDetectionSession.valid_detections++;
+
+        // Store location for every detection
+        rtDetectionSession.intermediate_locations.push({
+            lat: currentLat,
+            lng: currentLng,
+            confidence: data.confidence
+        });
+
+        // Update last damage
+        rtDetectionSession.last_damage = {
+            damage_type: data.damage_type,
+            confidence: data.confidence,
+            image: data.annotated_image,
+            lat: currentLat,
+            lng: currentLng,
+            text: gpsData.locationText
+        };
+
+        // Session timer
+        if (!rtSessionStartTime) return;
+
+        const elapsed = Date.now() - rtSessionStartTime;
+
+        if (elapsed >= RT_REPORT_INTERVAL) {
+
+            console.log("Auto submitting dashcam report after 30 seconds");
+
+            if (rtDetectionSession.last_damage) {
+                submitDashcamSession(rtDetectionSession);
+            }
+
+            rtDetectionSession = null;
+            rtSessionStartTime = null;
+
+            // Reset cooldown after submission
+            rtLastDetectionTime = Date.now();
+        }
+
+    }
+    catch (err) {
         console.warn("Realtime frame error:", err);
-    } finally {
+    }
+    finally {
         rtRequestInFlight = false;
     }
 }
@@ -309,39 +398,32 @@ function updateRealtimeOverlay(data) {
     }
 }
 
-async function autoSubmitDashcamReport(session) {
-
-    const formData = new FormData();
-
-    formData.append("damage_type", session.damage_type);
-    formData.append("confidence", session.confidence);
-    formData.append("location", gpsData.locationText || "");
-    formData.append("latitude", gpsData.lat);
-    formData.append("longitude", gpsData.lng);
-
-    if (session.annotated_image) {
-        formData.append("frame_b64", session.annotated_image);
-    }
+async function submitDashcamSession(session) {
 
     try {
 
-        const res = await fetch("/api/citizen/submit-realtime-frame", {
+        const res = await fetch("/api/dashcam/submit-dashcam-session", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${Auth.getToken()}`
+                "Authorization": `Bearer ${Auth.getToken()}`,
+                "Content-Type": "application/json"
             },
-            body: formData
+            body: JSON.stringify({
+                first_damage: session.first_damage,
+                last_damage: session.last_damage,
+                intermediate_locations: session.intermediate_locations
+            })
         });
 
         const data = await res.json();
 
         if (res.ok) {
-            console.log("Dashcam auto report submitted:", data.report_id);
-            showToast("Dashcam report auto-submitted");
+            console.log("Dashcam session saved:", data.report_id);
+            showToast(`Dashcam report saved (${session.valid_detections} detections)`);
         }
 
     } catch (err) {
-        console.warn("Auto submit failed:", err);
+        console.warn("Dashcam session submit failed:", err);
     }
 }
 
@@ -359,17 +441,46 @@ function stopRealtime() {
     }
 
     const video = document.getElementById('webcamVideo');
-    video.srcObject = null;
-    video.style.display = 'none';
+    if (video) {
+        video.srcObject = null;
+        video.style.display = 'none';
+    }
 
-    document.getElementById('webcamPlaceholder').style.display = 'block';
-    document.getElementById('liveBadge').style.display = 'none';
-    document.getElementById('detectionOverlay').style.display = 'none';
-    document.getElementById('rtStartBtn').style.display = 'block';
-    document.getElementById('rtStopBtn').style.display = 'none';
-    document.getElementById('rtSwitchBtn').style.display = 'none';
-    document.getElementById('rtStatus').textContent = 'Stopped';
-    document.getElementById('rtStatus').style.color = '#999';
+    const placeholder = document.getElementById('webcamPlaceholder');
+    if (placeholder) {
+        placeholder.style.display = 'block';
+    }
+
+    const liveBadge = document.getElementById('liveBadge');
+    if (liveBadge) {
+        liveBadge.style.display = 'none';
+    }
+
+    const overlay = document.getElementById('detectionOverlay');
+    if (overlay) {
+        overlay.style.display = 'none';
+    }
+
+    const startBtn = document.getElementById('rtStartBtn');
+    if (startBtn) {
+        startBtn.style.display = 'block';
+    }
+
+    const stopBtn = document.getElementById('rtStopBtn');
+    if (stopBtn) {
+        stopBtn.style.display = 'none';
+    }
+
+    const switchBtn = document.getElementById('rtSwitchBtn');
+    if (switchBtn) {
+        switchBtn.style.display = 'none';
+    }
+
+    const statusEl = document.getElementById('rtStatus');
+    if (statusEl) {
+        statusEl.textContent = 'Stopped';
+        statusEl.style.color = '#999';
+    }
 }
 
 /**
@@ -391,8 +502,10 @@ async function switchCamera() {
 
     // Update button label to show which camera is now active
     const switchBtn = document.getElementById('rtSwitchBtn');
-    switchBtn.textContent = rtCurrentFacingMode === 'environment' ? '🔄 Switch to Front' : '🔄 Switch to Back';
-    switchBtn.disabled = true;
+    if (switchBtn) {
+        switchBtn.textContent = rtCurrentFacingMode === 'environment' ? '🔄 Switch to Front' : '🔄 Switch to Back';
+        switchBtn.disabled = true;
+    }
 
     // Restart with new camera
     try {
@@ -628,14 +741,6 @@ async function startRealtimeLoop() {
 
 // Global exposure
 window.switchTab = switchTab;
-window.triggerFileInput = triggerFileInput;
-window.handleFileSelect = handleFileSelect;
-window.retakePhoto = retakePhoto;
-window.submitReport = submitReport;
-window.triggerVideoInput = triggerVideoInput;
-window.handleVideoSelect = handleVideoSelect;
-window.processVideo = processVideo;
-window.resetVideoTab = resetVideoTab;
 window.startRealtime = startRealtime;
 window.stopRealtime = stopRealtime;
 window.downloadAnnotatedImage = downloadAnnotatedImage;

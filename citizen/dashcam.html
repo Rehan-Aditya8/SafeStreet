@@ -171,17 +171,17 @@
                     </div>
 
                     <!-- Controls -->
-                    <div class="rt-controls">
+                    <!-- <div class="rt-controls"> -->
                         <!-- <button class="btn btn-primary" id="rtStartBtn" onclick="startRealtime()">▶️ Start
                             Detection</button> -->
-                        <button class="btn btn-secondary" id="rtStopBtn" onclick="stopRealtime()"
-                            style="display:none;">⏹️ Stop</button>
-                        <button class="btn btn-secondary" id="rtSwitchBtn" onclick="switchCamera()"
-                            style="display:none;" title="Switch between front and back camera">🔄 Switch Camera</button>
-                    </div>
+                        <!-- <button class="btn btn-secondary" id="rtStopBtn" onclick="stopRealtime()"
+                            style="display:none;">⏹️ Stop</button> -->
+                        <!-- <button class="btn btn-secondary" id="rtSwitchBtn" onclick="switchCamera()"
+                            style="display:none;" title="Switch between front and back camera">🔄 Switch Camera</button> -->
+                    <!-- </div> -->
 
                     <p style="color:#6b7280; font-size:0.85rem; margin-top:1rem;">
-                        💡 Frames are sent to the server every 1 second for analysis. Allow camera access when prompted.
+                       Reports are submitted every 30 seconds, including the first and last detections. The report also includes map coordinates marking all detections that occurred within that time window.
                     </p>
                 </div>
             </div>
@@ -191,17 +191,6 @@
     </main>
 
     <!-- Scripts -->
-    <script src="../shared/navigation.js"></script>
-    <script src="../shared/modal.js"></script>
-    <script src="../shared/auth.js"></script>
-    <script src="scripts/dashboard.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', initNavigation);
-        document.getElementById('profileAvatar').addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleProfileMenu(); }
-        });
-    </script>
-
     <script src="../shared/navigation.js"></script>
     <script src="../shared/modal.js"></script>
     <script src="../shared/auth.js"></script>

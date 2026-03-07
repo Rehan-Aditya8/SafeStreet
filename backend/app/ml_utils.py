@@ -22,6 +22,7 @@ def load_model():
 
             logger.info(f"Loading YOLO model from {model_path}...")
             model = YOLO(model_path)
+            model.fuse()
             logger.info("YOLO model loaded successfully.")
         except Exception as e:
             logger.error(f"Error loading YOLO model: {e}")
@@ -441,10 +442,10 @@ def detect_damage_with_frame(frame):
     try:
 
         # Resize frame for faster inference
-        frame_small = cv2.resize(frame, (416, 416))
+        # frame_small = cv2.resize(frame, (416, 416))
 
         # Run YOLO detection
-        results = model(frame_small, imgsz=320, conf=0.25, verbose=False)
+        results = model(frame, imgsz=320, conf=0.25, verbose=False)
 
         best_class = "No Damage"
         best_conf = 0.0
@@ -470,7 +471,7 @@ def detect_damage_with_frame(frame):
                 _, buf = cv2.imencode(
                     ".jpg",
                     annotated_bgr,
-                    [cv2.IMWRITE_JPEG_QUALITY, 80]
+                    [cv2.IMWRITE_JPEG_QUALITY, 70]
                 )
 
                 annotated_b64 = base64.b64encode(buf).decode("utf-8")
