@@ -214,61 +214,32 @@
 
               <!-- Last detection card + submit button -->
               <div
-                id="rtLastDetectionCard"
-                style="
-                  display: none;
-                  margin-top: 1rem;
-                  padding: 1rem;
-                  background: #eff6ff;
-                  border: 1px solid #bfdbfe;
-                  border-radius: 10px;
-                "
-              >
-                <h4 style="margin-bottom: 0.5rem">📸 Last Detection</h4>
-                <p
-                  id="rtLastDetectionLabel"
-                  style="color: #1d4ed8; margin-bottom: 0.75rem"
-                ></p>
-                <img
-                  id="rtLastDetectionImg"
-                  alt="Last detected frame"
-                  style="
-                    width: 100%;
-                    border-radius: 8px;
-                    border: 1px solid #bfdbfe;
-                    margin-bottom: 0.75rem;
-                    display: none;
-                  "
-                />
-                <div class="form-group">
-                  <label class="form-label">Description (Optional)</label>
-                  <textarea
-                    class="form-textarea"
-                    id="rtDescriptionInput"
-                    placeholder="Provide additional details..."
-                    rows="2"
-                  ></textarea>
-                </div>
-                <button
-                  class="btn btn-primary"
-                  id="rtSubmitBtn"
-                  style="width: 100%; margin-top: 0.5rem"
-                  onclick="submitRealtimeReport()"
-                >
-                  📤 Submit Report
-                </button>
-                <p
-                  id="rtSubmitStatus"
-                  style="
-                    text-align: center;
-                    color: #1d4ed8;
-                    font-size: 0.85rem;
-                    margin-top: 0.5rem;
-                    display: none;
-                  "
-                ></p>
-              </div>
+                      id="rtLastDetectionCard"
+                      style="
+                        display:none;
+                        margin-top:1rem;
+                        padding:1rem;
+                        background:#eff6ff;
+                        border:1px solid #bfdbfe;
+                        border-radius:10px;
+                      ">
+                      <h4 style="margin-bottom:0.5rem">📸 Last Detection</h4>
 
+                      <p id="rtLastDetectionLabel"
+                        style="color:#1d4ed8;margin-bottom:0.75rem"></p>
+
+                      <img
+                        id="rtLastDetectionImg"
+                        alt="Last detected frame"
+                        style="
+                          width:100%;
+                          border-radius:8px;
+                          border:1px solid #bfdbfe;
+                          margin-bottom:0.75rem;
+                          display:none;
+                        "
+                      />
+                    </div>
               <!-- Controls -->
               <!-- <div class="rt-controls"> -->
               <!-- <button class="btn btn-primary" id="rtStartBtn" onclick="startRealtime()">▶️ Start

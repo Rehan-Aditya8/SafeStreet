@@ -244,114 +244,106 @@ async function sendRealtimeFrame() {
 
         if (!res.ok) return;
 
-        if (!data.detected) {
-            updateRealtimeOverlay(data);
-            return;
-        }
-
-        const now = Date.now();
-
-        // Cooldown between detections
-        if (now - rtLastDetectionTime < RT_DETECTION_COOLDOWN) return;
-
-        rtLastDetectionTime = now;
-
-        rtTotalDetections++;
-        document.getElementById('rtTotal').textContent = rtTotalDetections;
-
         updateRealtimeOverlay(data);
 
-        const currentLat = gpsData.lat;
-        const currentLng = gpsData.lng;
+        // -------------------------------------------------
+        // HANDLE DETECTION
+        // -------------------------------------------------
 
-        // Skip if GPS not ready
-        if (currentLat == null || currentLng == null) return;
+        if (data.detected) {
 
-        // Ignore low confidence
-        if (data.confidence < RT_CONF_THRESHOLD) return;
+            const now = Date.now();
 
-        // Start detection session
-        if (!rtDetectionSession) {
+            // Always increment total detections
+            rtTotalDetections++;
+            document.getElementById('rtTotal').textContent = rtTotalDetections;
 
-            rtDetectionSession = {
-                first_damage: {
-                    damage_type: data.damage_type,
-                    confidence: data.confidence,
-                    image: data.annotated_image,
-                    lat: currentLat,
-                    lng: currentLng,
-                    text: gpsData.locationText
-                },
-                last_damage: null,
-                intermediate_locations: [],
-                valid_detections: 0
-            };
-
-            rtSessionStartTime = Date.now();
-
-            console.log("Dashcam detection session started");
-        }
-
-        // // Prevent very large payloads
-        // if (rtDetectionSession.intermediate_locations.length >= 50) return;
-
-        // const lastLoc = rtDetectionSession.intermediate_locations.slice(-1)[0];
-
-        // // Only store location if vehicle moved enough
-        // if (
-        //     !lastLoc ||
-        //     calculateDistance(lastLoc.lat, lastLoc.lng, currentLat, currentLng) > 8
-        // ) {
-
-        //     if (rtDetectionSession) {
-        //         rtDetectionSession.valid_detections++;
-        //     }
-
-        //     rtDetectionSession.intermediate_locations.push({
-        //         lat: currentLat,
-        //         lng: currentLng,
-        //         confidence: data.confidence
-        //     });
-        // }
-
-        // Count every valid detection
-        rtDetectionSession.valid_detections++;
-
-        // Store location for every detection
-        rtDetectionSession.intermediate_locations.push({
-            lat: currentLat,
-            lng: currentLng,
-            confidence: data.confidence
-        });
-
-        // Update last damage
-        rtDetectionSession.last_damage = {
-            damage_type: data.damage_type,
-            confidence: data.confidence,
-            image: data.annotated_image,
-            lat: currentLat,
-            lng: currentLng,
-            text: gpsData.locationText
-        };
-
-        // Session timer
-        if (!rtSessionStartTime) return;
-
-        const elapsed = Date.now() - rtSessionStartTime;
-
-        if (elapsed >= RT_REPORT_INTERVAL) {
-
-            console.log("Auto submitting dashcam report after 30 seconds");
-
-            if (rtDetectionSession.last_damage) {
-                submitDashcamSession(rtDetectionSession);
+            // Cooldown only affects session logging
+            if (now - rtLastDetectionTime < RT_DETECTION_COOLDOWN) {
+                return;
             }
 
-            rtDetectionSession = null;
-            rtSessionStartTime = null;
+            rtLastDetectionTime = now;
 
-            // Reset cooldown after submission
-            rtLastDetectionTime = Date.now();
+            const currentLat = gpsData.lat;
+            const currentLng = gpsData.lng;
+
+            // Skip if GPS not ready
+            if (currentLat == null || currentLng == null) return;
+
+            // Ignore low confidence
+            if (data.confidence < RT_CONF_THRESHOLD) return;
+
+            // Start detection session
+            if (!rtDetectionSession) {
+
+                rtDetectionSession = {
+                    first_damage: {
+                        damage_type: data.damage_type,
+                        confidence: data.confidence,
+                        image: data.annotated_image,
+                        lat: currentLat,
+                        lng: currentLng,
+                        text: gpsData.locationText
+                    },
+                    last_damage: null,
+                    intermediate_locations: [],
+                    valid_detections: 0
+                };
+
+                rtSessionStartTime = Date.now();
+
+                console.log("Dashcam detection session started");
+            }
+
+            // Count valid detection
+            rtDetectionSession.valid_detections++;
+
+            // Limit payload size
+            if (rtDetectionSession.intermediate_locations.length < 50) {
+
+                rtDetectionSession.intermediate_locations.push({
+                    lat: currentLat,
+                    lng: currentLng,
+                    confidence: data.confidence
+                });
+
+            }
+
+            // Update last damage
+            rtDetectionSession.last_damage = {
+                damage_type: data.damage_type,
+                confidence: data.confidence,
+                image: data.annotated_image,
+                lat: currentLat,
+                lng: currentLng,
+                text: gpsData.locationText
+            };
+
+        }
+
+        // -------------------------------------------------
+        // AUTO SUBMIT CHECK (runs every frame)
+        // -------------------------------------------------
+
+        if (rtDetectionSession && rtSessionStartTime) {
+
+            const elapsed = Date.now() - rtSessionStartTime;
+
+            if (elapsed >= RT_REPORT_INTERVAL) {
+
+                console.log("Auto submitting dashcam report after 30 seconds");
+
+                if (rtDetectionSession.last_damage) {
+                    submitDashcamSession(rtDetectionSession);
+                }
+
+                rtDetectionSession = null;
+                rtSessionStartTime = null;
+
+                // Reset cooldown
+                rtLastDetectionTime = Date.now();
+            }
         }
 
     }
@@ -367,34 +359,39 @@ async function sendRealtimeFrame() {
 let rtLastDetection = null;
 
 function updateRealtimeOverlay(data) {
+
     const overlay = document.getElementById('detectionOverlay');
+
     if (data.detected && data.damage_type) {
+
         overlay.innerHTML = `
             <span class="detection-label">
                 ${data.damage_type} &nbsp; ${(data.confidence * 100).toFixed(0)}%
             </span>
         `;
-        // Update last detection card
+
         rtLastDetection = data;
+
         document.getElementById('rtLastDetectionLabel').textContent =
             `${data.damage_type} — ${(data.confidence * 100).toFixed(0)}% confidence`;
-        // Show annotated frame if available
+
         const img = document.getElementById('rtLastDetectionImg');
+
         if (data.annotated_image) {
-            img.src = data.annotated_image.startsWith('data:') ? data.annotated_image : `data:image/jpeg;base64,${data.annotated_image}`;
+            img.src = data.annotated_image.startsWith('data:')
+                ? data.annotated_image
+                : `data:image/jpeg;base64,${data.annotated_image}`;
             img.style.display = 'block';
         } else {
             img.style.display = 'none';
         }
-        // Reset submit button state
-        // const submitBtn = document.getElementById('rtSubmitBtn');
-        // const submitStatus = document.getElementById('rtSubmitStatus');
-        submitBtn.disabled = false;
-        // submitBtn.textContent = '📤 Submit Report';
-        submitStatus.style.display = 'none';
+
         document.getElementById('rtLastDetectionCard').style.display = 'block';
+
     } else {
-        overlay.innerHTML = `<span class="detection-label no-damage">✓ No Damage</span>`;
+
+        overlay.innerHTML =
+            `<span class="detection-label no-damage">✓ No Damage</span>`;
     }
 }
 
@@ -650,56 +647,56 @@ async function submitVideoReport() {
     }
 }
 
-/**
- * Submit a report for the last realtime detection frame.
- */
-async function submitRealtimeReport() {
-    if (!rtLastDetection) return;
+// /**
+//  * Submit a report for the last realtime detection frame.
+//  */
+// async function submitRealtimeReport() {
+//     if (!rtLastDetection) return;
 
-    const btn = document.getElementById('rtSubmitBtn');
-    const status = document.getElementById('rtSubmitStatus');
-    btn.disabled = true;
-    btn.textContent = '⏳ Submitting...';
-    status.style.display = 'none';
+//     const btn = document.getElementById('rtSubmitBtn');
+//     const status = document.getElementById('rtSubmitStatus');
+//     btn.disabled = true;
+//     btn.textContent = '⏳ Submitting...';
+//     status.style.display = 'none';
 
-    const formData = new FormData();
-    formData.append('damage_type', rtLastDetection.damage_type);
-    formData.append('confidence', rtLastDetection.confidence);
-    formData.append('location', gpsData.locationText || '');
-    if (gpsData.lat !== null) {
-        formData.append('latitude', gpsData.lat);
-        formData.append('longitude', gpsData.lng);
-    }
-    const desc = document.getElementById('rtDescriptionInput')?.value?.trim();
-    if (desc) formData.append('description', desc);
-    // Attach the annotated frame image
-    if (rtLastDetection.annotated_image) {
-        formData.append('frame_b64', rtLastDetection.annotated_image);
-    }
+//     const formData = new FormData();
+//     formData.append('damage_type', rtLastDetection.damage_type);
+//     formData.append('confidence', rtLastDetection.confidence);
+//     formData.append('location', gpsData.locationText || '');
+//     if (gpsData.lat !== null) {
+//         formData.append('latitude', gpsData.lat);
+//         formData.append('longitude', gpsData.lng);
+//     }
+//     const desc = document.getElementById('rtDescriptionInput')?.value?.trim();
+//     if (desc) formData.append('description', desc);
+//     // Attach the annotated frame image
+//     if (rtLastDetection.annotated_image) {
+//         formData.append('frame_b64', rtLastDetection.annotated_image);
+//     }
 
-    try {
-        const res = await fetch('/api/citizen/submit-realtime-frame', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
-            body: formData
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.msg || 'Submit failed');
+//     try {
+//         const res = await fetch('/api/citizen/submit-realtime-frame', {
+//             method: 'POST',
+//             headers: { 'Authorization': `Bearer ${Auth.getToken()}` },
+//             body: formData
+//         });
+//         const data = await res.json();
+//         if (!res.ok) throw new Error(data.msg || 'Submit failed');
 
-        btn.textContent = '✅ Submitted';
-        status.textContent = `Report #${data.report_id} saved successfully!`;
-        status.style.color = '#22c55e';
-        status.style.display = 'block';
-        // Clear description after submit
-        document.getElementById('rtDescriptionInput').value = '';
-    } catch (err) {
-        btn.disabled = false;
-        btn.textContent = '📤 Submit Report';
-        status.textContent = 'Error: ' + err.message;
-        status.style.color = '#f87171';
-        status.style.display = 'block';
-    }
-}
+//         btn.textContent = '✅ Submitted';
+//         status.textContent = `Report #${data.report_id} saved successfully!`;
+//         status.style.color = '#22c55e';
+//         status.style.display = 'block';
+//         // Clear description after submit
+//         document.getElementById('rtDescriptionInput').value = '';
+//     } catch (err) {
+//         btn.disabled = false;
+//         btn.textContent = '📤 Submit Report';
+//         status.textContent = 'Error: ' + err.message;
+//         status.style.color = '#f87171';
+//         status.style.display = 'block';
+//     }
+// }
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371000; // meters
@@ -747,4 +744,4 @@ window.downloadAnnotatedImage = downloadAnnotatedImage;
 window.downloadAnnotatedVideo = downloadAnnotatedVideo;
 window.switchCamera = switchCamera;
 window.submitVideoReport = submitVideoReport;
-window.submitRealtimeReport = submitRealtimeReport;
+// window.submitRealtimeReport = submitRealtimeReport;
