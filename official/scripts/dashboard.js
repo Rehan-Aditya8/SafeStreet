@@ -4,7 +4,7 @@ let allOfficerReports = [];
 let filteredReports = [];
 let currentPage = 1;
 const pageSize = 4;
-let sourceFilter = 'all';
+let sourceFilter = 'citizen';
 
 // Initialize dashboard when page loads
 document.addEventListener('DOMContentLoaded', async () => {
@@ -41,8 +41,9 @@ async function loadReports() {
  * Initialize dashboard
  */
 function initDashboard() {
+    updateSourceButtons();  // highlight Citizen button
+    applyFilters();         // apply citizen filter
     updateKPIs();
-    renderReportsTable();
 }
 
 /**
@@ -114,8 +115,10 @@ function applyFilters() {
 
         // 5. Source Logic
         let sourceMatch = true;
-        if (sourceFilter === 'dashcam') {
-            sourceMatch = false;
+        if (sourceFilter === 'citizen') {
+            sourceMatch = getReportSource(report) === 'citizen';
+        } else if (sourceFilter === 'dashcam') {
+            sourceMatch = getReportSource(report) === 'dashcam';
         }
 
         return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
@@ -126,11 +129,7 @@ function applyFilters() {
 }
 
 function getReportSource(report) {
-    const imageUrl = report.image_url || '';
-    if (imageUrl.indexOf('VIDEO_REPORT') !== -1 || imageUrl.indexOf('rt_submit_') !== -1) {
-        return 'dashcam';
-    }
-    return 'citizen';
+    return report.report_source || 'citizen';
 }
 
 /**
@@ -184,9 +183,42 @@ function renderReportsTable() {
     const pageItems = filteredReports.slice(startIndex, endIndex);
 
     tbody.innerHTML = pageItems.map(report => {
-        const severity = (report.severity || 'low').toLowerCase();
+        let severity = (report.severity || 'low').toLowerCase();
+
+        let detectionCount = null;
+        if (getReportSource(report) === 'dashcam' && report.location) {
+            const parts = report.location.split('|');
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i].trim();
+                if (part.indexOf('detections:') === 0) {
+                    const value = part.substring('detections:'.length).trim();
+                    const n = parseInt(value, 10);
+                    if (!isNaN(n)) {
+                        detectionCount = n;
+                    }
+                }
+            }
+        }
+
+        if (detectionCount !== null) {
+            if (detectionCount >= 10) {
+                severity = 'critical';
+            } else if (detectionCount >= 5) {
+                severity = 'high';
+            } else if (detectionCount >= 2) {
+                severity = 'medium';
+            } else {
+                severity = 'low';
+            }
+        }
+
         const severityPill = `pill-${severity}`;
         const severityText = severity.charAt(0).toUpperCase() + severity.slice(1);
+
+        let displayLocation = report.location || '';
+        if (getReportSource(report) === 'dashcam' && report.latitude != null && report.longitude != null) {
+            displayLocation = report.latitude + ', ' + report.longitude;
+        }
 
         // Status mapping
         let statusPill = 'pill-pending';
@@ -205,7 +237,7 @@ function renderReportsTable() {
         return `
             <tr>
                 <td style="font-weight: 600;" title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</td>
-                <td>${report.location}</td>
+                <td>${displayLocation}</td>
                 <td>${report.damage_type || 'Road Damage'}</td>
                 <td><span class="pill ${statusPill}">${statusText}</span></td>
                 <td><span class="pill pill-${severity}">${severityText}</span></td>
@@ -280,11 +312,7 @@ function changePage(page) {
 }
 
 function setSourceFilter(source) {
-    if (sourceFilter === source) {
-        sourceFilter = 'all';
-    } else {
-        sourceFilter = source;
-    }
+    sourceFilter = source;   // always set selected source
     currentPage = 1;
     updateSourceButtons();
     applyFilters();

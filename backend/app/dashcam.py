@@ -131,16 +131,18 @@ def submit_dashcam_session():
         cv2.imwrite(os.path.join(image_dir, last_filename), img)
 
     # -------------------------
-    # Severity
+    # Severity based on detections
     # -------------------------
     confidence = max(
         float(first.get("confidence", 0)),
         float(last.get("confidence", 0)) if last else 0
     )
 
-    if confidence >= 0.8:
+    if valid_detection_count >= 10:
+        severity = "critical"
+    elif valid_detection_count >= 5:
         severity = "high"
-    elif confidence >= 0.5:
+    elif valid_detection_count >= 2:
         severity = "medium"
     else:
         severity = "low"
@@ -157,7 +159,8 @@ def submit_dashcam_session():
         detected_damage_type=first.get("damage_type"),
         confidence_score=round(confidence, 3),
         severity=severity,
-        status="submitted"
+        status="submitted",
+        report_source="dashcam"
     )
 
     db.session.add(report)

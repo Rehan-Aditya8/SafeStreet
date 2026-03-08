@@ -66,10 +66,6 @@ def detect_only():
 
 
 # =====================================================
-# 📹 REALTIME FRAME DETECT (POLLING)
-# =====================================================
-@citizen_bp.route('/detect-frame', methods=['POST'])
-# =====================================================
 # 📹 REALTIME FRAME DETECT (ULTRA FAST)
 # =====================================================
 @citizen_bp.route('/detect-frame', methods=['POST'])
@@ -329,6 +325,8 @@ def submit_realtime_frame():
 
     report = DamageReport(
         citizen_id=user_id,
+        device_id=None,
+        report_source="citizen",
         image_path=img_filename,
         location=request.form.get('location'),
         latitude=request.form.get('latitude', type=float),
@@ -394,6 +392,8 @@ def submit_report():
     # -------------------------
     report = DamageReport(
         citizen_id=user_id,
+        device_id=None,
+        report_source="citizen",
         image_path=filename,  # 👈 critical for /api/files/images/<filename>
         location=request.form.get("location"),
         latitude=request.form.get("latitude", type=float),

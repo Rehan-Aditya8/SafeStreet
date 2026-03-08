@@ -55,9 +55,9 @@ async function loadReport() {
 }
 
 // =====================================================
-// LOAD MAP WITH MARKER (LEAFLET + OSM)
+// LOAD MAP WITH MARKERS (LEAFLET + OSM)
 // =====================================================
-function loadMap(lat, lng) {
+function loadMap(lat, lng, detectionCount) {
 
     if (mapInstance) return; // prevent re-init
 
@@ -77,10 +77,16 @@ function loadMap(lat, lng) {
         attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstance);
 
-    // Marker
-    L.marker([lat, lng])
-        .addTo(mapInstance)
-        .bindPopup('Reported Damage Location');
+    // Markers
+    let pins = 1;
+    if (typeof detectionCount === 'number' && detectionCount > 1) {
+        pins = detectionCount;
+    }
+    for (let i = 0; i < pins; i++) {
+        L.marker([lat, lng])
+            .addTo(mapInstance)
+            .bindPopup('Reported Damage Location');
+    }
 
     // OPTIONAL POLISH
     mapInstance.setMinZoom(10);
@@ -98,10 +104,43 @@ function loadMap(lat, lng) {
 // =====================================================
 async function populateReport(report) {
 
+    // DASHCAM METADATA (first/last image + detections)
+    let isDashcam = false;
+    let detectionCount = null;
+    let lastImageFilename = null;
+
+    if (report.image_url && report.image_url.indexOf('dashcam_first_') !== -1) {
+        isDashcam = true;
+    }
+
+    if (isDashcam && report.location) {
+        const parts = report.location.split('|');
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i].trim();
+            if (part.indexOf('detections:') === 0) {
+                const value = part.substring('detections:'.length).trim();
+                const n = parseInt(value, 10);
+                if (!isNaN(n)) {
+                    detectionCount = n;
+                }
+            } else if (part.indexOf('last_image:') === 0) {
+                lastImageFilename = part.substring('last_image:'.length).trim();
+            }
+        }
+    }
+
     // IMAGE (SECURE FETCH)
     const img = document.getElementById('reportImage');
+    const lastImg = document.getElementById('reportImageLast');
 
-    if (report.image_url) {
+    if (img) {
+        img.style.display = 'none';
+    }
+    if (lastImg) {
+        lastImg.style.display = 'none';
+    }
+
+    if (report.image_url && img) {
         try {
             const response = await Auth.fetchWithAuth(report.image_url);
             if (response.ok) {
@@ -114,8 +153,22 @@ async function populateReport(report) {
         }
     }
 
+    if (isDashcam && lastImg && lastImageFilename) {
+        try {
+            const lastUrl = `/api/files/images/${lastImageFilename}`;
+            const lastResponse = await Auth.fetchWithAuth(lastUrl);
+            if (lastResponse.ok) {
+                const lastBlob = await lastResponse.blob();
+                lastImg.src = URL.createObjectURL(lastBlob);
+                lastImg.style.display = 'block';
+            }
+        } catch (err) {
+            console.error('Last image load failed');
+        }
+    }
+
     // AI RESULT
-    document.getElementById('aiResult').innerHTML = `
+    const aiHtml = `
         <div class="ai-result-item">
             <strong>Damage Type:</strong> ${report.damage_type || 'N/A'}
         </div>
@@ -130,9 +183,24 @@ async function populateReport(report) {
         </div>
     `;
 
+    const aiResultEl = document.getElementById('aiResult');
+    if (aiResultEl) {
+        aiResultEl.innerHTML = aiHtml;
+    }
+
+    if (isDashcam) {
+        const aiBelow = document.getElementById('aiResultBelowMap');
+        if (aiBelow) {
+            aiBelow.innerHTML = aiHtml;
+            if (aiResultEl) {
+                aiResultEl.innerHTML = '';
+            }
+        }
+    }
+
     // LOCATION + MAP
     if (report.latitude != null && report.longitude != null) {
-        loadMap(report.latitude, report.longitude);
+        loadMap(report.latitude, report.longitude, detectionCount);
     } else {
         document.getElementById('mapCoords').textContent =
             'Location not available';
