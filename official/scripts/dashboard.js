@@ -361,13 +361,19 @@ window.viewReport = (id) => {
 };
 
 window.verifyReport = (id) => {
-    window.location.href = `verification.html?id=${id}`;
+    const report = allOfficerReports.find(r => r.id === id);
+    const page = (report && getReportSource(report) === 'dashcam') ? 'dashcam-verification.html' : 'verification.html';
+    window.location.href = `${page}?id=${id}`;
 };
 window.assignReport = (id) => {
-    window.location.href = `assignment.html?id=${id}`;
+    const report = allOfficerReports.find(r => r.id === id);
+    const page = (report && getReportSource(report) === 'dashcam') ? 'dashcam-assignment.html' : 'assignment.html';
+    window.location.href = `${page}?id=${id}`;
 };
 window.monitorReport = (id) => {
-    window.location.href = `monitoring.html?id=${id}`;
+    const report = allOfficerReports.find(r => r.id === id);
+    const page = (report && getReportSource(report) === 'dashcam') ? 'dashcam-monitoring.html' : 'monitoring.html';
+    window.location.href = `${page}?id=${id}`;
 };
 
 // --- Slide Panel Logic ---
