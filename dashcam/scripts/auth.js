@@ -86,8 +86,11 @@ const Auth = {
         localStorage.removeItem("device_token");
         localStorage.removeItem("device_id");
         localStorage.removeItem("vehicle_no");
+        localStorage.removeItem("role");
+        localStorage.removeItem("user_name");
 
-        window.location.href = "/";
+        // Redirect to landing page (one level up from dashcam/)
+        window.location.href = "../index.html";
 
     },
 
