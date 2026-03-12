@@ -1,6 +1,7 @@
 // Officer Dashboard JavaScript
 
 let allOfficerReports = [];
+let localReportsMap = new Map(); // New: Store local resolution data
 let filteredReports = [];
 let currentPage = 1;
 const pageSize = 4;
@@ -25,7 +26,12 @@ async function loadReports() {
         const response = await Auth.fetchWithAuth('/api/official/reports');
         if (!response.ok) throw new Error('Failed to fetch reports');
 
-        allOfficerReports = await response.json();
+        const apiReports = await response.json();
+        
+        // Load local reports from IndexedDB
+        await loadLocalReports(apiReports);
+
+        allOfficerReports = apiReports;
         filteredReports = [...allOfficerReports];
 
         initDashboard();
@@ -35,6 +41,23 @@ async function loadReports() {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color:red;">Error loading reports: ${error.message}</td></tr>`;
         }
     }
+}
+
+/**
+ * Fetch local reports from IndexedDB to override API statuses
+ */
+async function loadLocalReports(reports) {
+    if (!window.ReportStorage) return;
+    
+    localReportsMap.clear();
+    const promises = reports.map(async (report) => {
+        const localData = await ReportStorage.get(report.id);
+        if (localData) {
+            localReportsMap.set(report.id, localData);
+        }
+    });
+    
+    await Promise.all(promises);
 }
 
 /**
@@ -91,10 +114,20 @@ function applyFilters() {
 
         // 4. Status Logic
         let statusMatch = !statusFilter;
+        
+        // Use effective status for filtering
+        let effectiveStatus = report.status;
+        const localData = localReportsMap.get(report.id);
+        if (localData && localData.status) {
+            effectiveStatus = localData.status;
+        }
+
         if (statusFilter === 'verified') {
-            statusMatch = report.status === 'verified' || report.status === 'approved';
+            statusMatch = effectiveStatus === 'verified' || effectiveStatus === 'approved';
+        } else if (statusFilter === 'resolved') {
+            statusMatch = effectiveStatus === 'resolved' || effectiveStatus === 'completed';
         } else if (statusFilter) {
-            statusMatch = report.status === statusFilter;
+            statusMatch = effectiveStatus === statusFilter;
         }
 
         // 4. Date Logic
@@ -222,14 +255,22 @@ function renderReportsTable() {
 
         // Status mapping
         let statusPill = 'pill-pending';
-        let statusText = report.status;
+        
+        // New: Check for local status override
+        let reportStatus = report.status;
+        const localData = localReportsMap.get(report.id);
+        if (localData && localData.status) {
+            reportStatus = localData.status;
+        }
+        
+        let statusText = reportStatus;
 
-        if (report.status === 'submitted') { statusPill = 'pill-pending'; statusText = 'Pending Review'; }
-        else if (report.status === 'verified' || report.status === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
-        else if (report.status === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
-        else if (report.status === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
-        else if (report.status === 'resolved') { statusPill = 'pill-resolved'; statusText = 'Resolved'; }
-        else if (report.status === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
+        if (reportStatus === 'submitted') { statusPill = 'pill-pending'; statusText = 'Pending Review'; }
+        else if (reportStatus === 'verified' || reportStatus === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
+        else if (reportStatus === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
+        else if (reportStatus === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
+        else if (reportStatus === 'resolved' || reportStatus === 'completed') { statusPill = 'pill-resolved'; statusText = 'Resolved'; }
+        else if (reportStatus === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
 
         const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
         const agoText = report.created_at ? formatTimeAgo(new Date(report.created_at)) : 'N/A';
@@ -244,37 +285,36 @@ function renderReportsTable() {
                 <td style="color: var(--text-muted);">${dateStr}</td>
                 <td>
                     <div class="action-btns">
-                        <button class="action-btn" title="View Details" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">
-                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="btn-action btn-view" title="View Details" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                             </svg>
+                            View
                         </button>
-                        ${report.status === 'submitted' ? `
-                            <button class="action-btn" title="Verify" onclick="verifyReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        ${reportStatus === 'submitted' ? `
+                            <button class="btn-action btn-verify" title="Verify" onclick="verifyReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                                 </svg>
+                                Verify
                             </button>
                         ` : ''}
-                        ${(report.status === 'verified' || report.status === 'approved') ? `
-                            <button class="action-btn" title="Assign" onclick="assignReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        ${(reportStatus === 'verified' || reportStatus === 'approved') ? `
+                            <button class="btn-action btn-assign" title="Assign" onclick="assignReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
                                 </svg>
+                                Assign
                             </button>
                         ` : ''}
-                        ${(report.status === 'assigned' || report.status === 'in-progress') ? `
-                            <button class="action-btn" title="Monitor" onclick="monitorReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        ${(reportStatus === 'assigned' || reportStatus === 'in-progress') ? `
+                            <button class="btn-action btn-monitor" title="Monitor" onclick="monitorReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M12 9v3l2 2"/><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                                 </svg>
+                                Monitor
                             </button>
                         ` : ''}
-                        <!-- <button class="action-btn" title="Edit">
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                            </svg>
-                        </button> -->
                     </div>
                 </td>
             </tr>

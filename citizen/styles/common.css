@@ -32,6 +32,14 @@
 .top-bar__logo {
     display: flex;
     align-items: center;
+    height: 100%;
+}
+
+.top-bar__logo-img {
+    height: 40px;
+    width: auto;
+    object-fit: contain;
+    display: block;
 }
 
 .top-bar__title {

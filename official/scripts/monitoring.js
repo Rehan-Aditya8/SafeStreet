@@ -482,6 +482,7 @@ async function submitFinalReport() {
         
         // Save to IndexedDB for persistence (resolves QuotaExceededError)
         const stateToSave = {
+            status: 'resolved',
             description: description,
             officer: officerName,
             resolvedAt: resolvedAt,

@@ -27,16 +27,18 @@
         }
 
         .login-icon-top {
-            width: 50px;
-            height: 50px;
-            background: #eff6ff;
-            color: #3b82f6;
-            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
-            margin: 0 auto 1.5rem;
+        }
+
+        .login-logo-img {
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
         }
 
         .login-header {
@@ -195,9 +197,11 @@
 
 <body>
     <div class="login-card">
-        <div class="login-icon-top">🏙️</div>
+        <div class="login-icon-top">
+            <img src="assets/logo.png" class="login-logo-img" alt="SafeStreets Logo">
+        </div>
         <div class="login-header">
-            <span class="login-subtitle">Solapur Municipal Corporation</span>
+            <!-- <span class="login-subtitle">Solapur Municipal Corporation</span> -->
             <h1>Create Account</h1>
             <p>Join to report infrastructure issues</p>
         </div>

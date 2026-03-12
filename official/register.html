@@ -49,15 +49,19 @@
         }
 
         .org-logo {
-            width: 48px;
-            height: 48px;
-            background: #eff6ff;
-            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 1.5rem;
-            color: var(--primary);
+        }
+
+        .org-logo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .org-name {
@@ -227,18 +231,9 @@
     <div class="login-card">
         <div class="login-header">
             <div class="org-logo">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
-                    <path d="M9 22v-4h6v4"></path>
-                    <path d="M8 6h.01"></path>
-                    <path d="M16 6h.01"></path>
-                    <path d="M8 10h.01"></path>
-                    <path d="M16 10h.01"></path>
-                    <path d="M8 14h.01"></path>
-                    <path d="M16 14h.01"></path>
-                </svg>
+                <img src="../shared/assets/logo.png" class="org-logo-img" alt="SafeStreets Logo">
             </div>
-            <span class="org-name">Solapur Municipal Corporation</span>
+            <!-- <span class="org-name">Solapur Municipal Corporation</span> -->
             <h1>Register Official</h1>
             <p>Create an account to access the government infrastructure portal</p>
         </div>

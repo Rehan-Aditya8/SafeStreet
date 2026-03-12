@@ -89,8 +89,8 @@ const Auth = {
         localStorage.removeItem("role");
         localStorage.removeItem("user_name");
 
-        // Redirect to landing page (one level up from dashcam/)
-        window.location.href = "../index.html";
+        // Redirect to landing page
+        window.location.href = "/";
 
     },
 
