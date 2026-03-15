@@ -1,7 +1,6 @@
 // Officer Dashboard JavaScript
 
 let allOfficerReports = [];
-let localReportsMap = new Map(); // New: Store local resolution data
 let filteredReports = [];
 let currentPage = 1;
 const pageSize = 4;
@@ -26,12 +25,7 @@ async function loadReports() {
         const response = await Auth.fetchWithAuth('/api/official/reports');
         if (!response.ok) throw new Error('Failed to fetch reports');
 
-        const apiReports = await response.json();
-        
-        // Load local reports from IndexedDB
-        await loadLocalReports(apiReports);
-
-        allOfficerReports = apiReports;
+        allOfficerReports = await response.json();
         filteredReports = [...allOfficerReports];
 
         initDashboard();
@@ -41,23 +35,6 @@ async function loadReports() {
             tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 2rem; color:red;">Error loading reports: ${error.message}</td></tr>`;
         }
     }
-}
-
-/**
- * Fetch local reports from IndexedDB to override API statuses
- */
-async function loadLocalReports(reports) {
-    if (!window.ReportStorage) return;
-    
-    localReportsMap.clear();
-    const promises = reports.map(async (report) => {
-        const localData = await ReportStorage.get(report.id);
-        if (localData) {
-            localReportsMap.set(report.id, localData);
-        }
-    });
-    
-    await Promise.all(promises);
 }
 
 /**
@@ -90,6 +67,7 @@ function updateKPIs() {
 function applyFilters() {
     const searchInput = document.getElementById('dashboardSearchInput');
     const searchText = (searchInput ? searchInput.value : '').toLowerCase();
+    const issueTypeFilter = document.getElementById('issueTypeFilter').value;
     const severityFilter = document.getElementById('severityFilter').value;
     const statusFilter = document.getElementById('statusFilter').value;
     const startDate = document.getElementById('startDateFilter').value;
@@ -105,27 +83,18 @@ function applyFilters() {
             location.includes(searchText) ||
             damageType.includes(searchText);
 
-        // 2. Issue Type Logic (Removed)
+        // 2. Issue Type Logic
+        const issueTypeMatch = !issueTypeFilter || (report.damage_type || '').toLowerCase().includes(issueTypeFilter);
 
         // 3. Severity Logic
         const severityMatch = !severityFilter || (report.severity || '').toLowerCase() === severityFilter;
 
         // 4. Status Logic
         let statusMatch = !statusFilter;
-        
-        // Use effective status for filtering
-        let effectiveStatus = report.status;
-        const localData = localReportsMap.get(report.id);
-        if (localData && localData.status) {
-            effectiveStatus = localData.status;
-        }
-
         if (statusFilter === 'verified') {
-            statusMatch = effectiveStatus === 'verified' || effectiveStatus === 'approved';
-        } else if (statusFilter === 'resolved') {
-            statusMatch = effectiveStatus === 'resolved' || effectiveStatus === 'completed';
+            statusMatch = report.status === 'verified' || report.status === 'approved';
         } else if (statusFilter) {
-            statusMatch = effectiveStatus === statusFilter;
+            statusMatch = report.status === statusFilter;
         }
 
         // 4. Date Logic
@@ -152,7 +121,7 @@ function applyFilters() {
             sourceMatch = getReportSource(report) === 'dashcam';
         }
 
-        return searchMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
+        return searchMatch && issueTypeMatch && severityMatch && statusMatch && dateMatch && sourceMatch;
     });
 
     currentPage = 1;
@@ -169,6 +138,7 @@ function getReportSource(report) {
 function clearFilters() {
     const searchInput = document.getElementById('dashboardSearchInput');
     if (searchInput) searchInput.value = '';
+    document.getElementById('issueTypeFilter').value = '';
     document.getElementById('severityFilter').value = '';
     document.getElementById('statusFilter').value = '';
     document.getElementById('startDateFilter').value = '';
@@ -252,22 +222,14 @@ function renderReportsTable() {
 
         // Status mapping
         let statusPill = 'pill-pending';
-        
-        // New: Check for local status override
-        let reportStatus = report.status;
-        const localData = localReportsMap.get(report.id);
-        if (localData && localData.status) {
-            reportStatus = localData.status;
-        }
-        
-        let statusText = reportStatus;
+        let statusText = report.status;
 
-        if (reportStatus === 'submitted') { statusPill = 'pill-pending'; statusText = 'Pending Review'; }
-        else if (reportStatus === 'verified' || reportStatus === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
-        else if (reportStatus === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
-        else if (reportStatus === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
-        else if (reportStatus === 'resolved' || reportStatus === 'completed') { statusPill = 'pill-resolved'; statusText = 'Completed'; }
-        else if (reportStatus === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
+        if (report.status === 'submitted') { statusPill = 'pill-pending'; statusText = 'Pending Review'; }
+        else if (report.status === 'verified' || report.status === 'approved') { statusPill = 'pill-progress'; statusText = 'Verified'; }
+        else if (report.status === 'assigned') { statusPill = 'pill-progress'; statusText = 'Assigned'; }
+        else if (report.status === 'in-progress') { statusPill = 'pill-progress'; statusText = 'In Progress'; }
+        else if (report.status === 'resolved') { statusPill = 'pill-resolved'; statusText = 'Resolved'; }
+        else if (report.status === 'rejected') { statusPill = 'pill-resolved'; statusText = 'Rejected'; }
 
         const dateStr = report.created_at ? new Date(report.created_at).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A';
         const agoText = report.created_at ? formatTimeAgo(new Date(report.created_at)) : 'N/A';
@@ -276,57 +238,43 @@ function renderReportsTable() {
             <tr>
                 <td style="font-weight: 600;" title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</td>
                 <td>${displayLocation}</td>
-                <td style="color: var(--text-dark); font-weight: 500;">Roads</td>
+                <td>${report.damage_type || 'Road Damage'}</td>
                 <td><span class="pill ${statusPill}">${statusText}</span></td>
                 <td><span class="pill pill-${severity}">${severityText}</span></td>
                 <td style="color: var(--text-muted);">${dateStr}</td>
                 <td>
                     <div class="action-btns">
-                        <button class="btn-action btn-view" title="View Details" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="action-btn" title="View Details" onclick="openPanel('${encodeURIComponent(JSON.stringify(report))}')">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                             </svg>
-                            View
                         </button>
-                        ${reportStatus === 'submitted' ? `
-                            <button class="btn-action btn-verify" title="Verify" onclick="verifyReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        ${report.status === 'submitted' ? `
+                            <button class="action-btn" title="Verify" onclick="verifyReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
                                 </svg>
-                                Verify
                             </button>
                         ` : ''}
-                        ${(reportStatus === 'verified' || reportStatus === 'approved') ? `
-                            <button class="btn-action btn-assign" title="Assign" onclick="assignReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        ${(report.status === 'verified' || report.status === 'approved') ? `
+                            <button class="action-btn" title="Assign" onclick="assignReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                                     <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/>
                                 </svg>
-                                Assign
                             </button>
                         ` : ''}
-                        ${(reportStatus === 'assigned' || reportStatus === 'in-progress') ? `
-                            <button class="btn-action btn-monitor" title="Monitor" onclick="monitorReport('${report.id}')">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                  <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-                                  <circle cx="12" cy="12" r="3" />
+                        ${(report.status === 'assigned' || report.status === 'in-progress') ? `
+                            <button class="action-btn" title="Monitor" onclick="monitorReport('${report.id}')">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><path d="M12 9v3l2 2"/><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
                                 </svg>
-                                Monitor
-                            </button>
-                            <button class="btn-action btn-completed" title="Assignment Done" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 6 9 17l-5-5"/>
-                                </svg>
-                                Completed
                             </button>
                         ` : ''}
-                        ${(reportStatus === 'resolved' || reportStatus === 'completed') ? `
-                            <button class="btn-action btn-completed" title="Completed" style="cursor: default; opacity: 0.8; background-color: var(--success-bg, #dcfce7); color: var(--success-text, #166534); border: 1px solid var(--success-border, #bbf7d0);" onclick="event.preventDefault();">
-                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M20 6 9 17l-5-5"/>
-                                </svg>
-                                Completed
-                            </button>
-                        ` : ''}
+                        <!-- <button class="action-btn" title="Edit">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </button> -->
                     </div>
                 </td>
             </tr>

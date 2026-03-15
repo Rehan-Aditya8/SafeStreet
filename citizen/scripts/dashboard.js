@@ -56,18 +56,6 @@ async function loadReports() {
         if (!response.ok) throw new Error('Failed to fetch reports');
 
         allReports = await response.json();
-
-        // Cross-reference with locally persisted resolution data
-        for (const report of allReports) {
-            const savedState = await ReportStorage.get(report.id);
-            if (savedState) {
-                report.status = 'resolved';
-                report.resolved_at = savedState.resolvedAt;
-                report.persistedAfterPhoto = savedState.afterPhoto;
-                report.persistedDescription = savedState.description;
-            }
-        }
-
         updateStatusSummary(allReports);
         applyDashFilters();
         loadPreviewImages();
@@ -314,20 +302,11 @@ function closeReportDetail() {
 /**
  * Render the report detail view
  */
-async function renderDetailView(report) {
+function renderDetailView(report) {
     // Hide dashboard content, show detail
     document.getElementById('dashboardContent').style.display = 'none';
     document.getElementById('reportNewIssueBtn').style.display = 'none';
     document.getElementById('reportDetailView').style.display = '';
-
-    // Check for locally persisted resolution state (from official/scripts/monitoring.js)
-    const savedState = await ReportStorage.get(report.id);
-    if (savedState) {
-        report.status = 'resolved';
-        report.resolved_at = savedState.resolvedAt;
-        report.persistedAfterPhoto = savedState.afterPhoto;
-        report.persistedDescription = savedState.description;
-    }
 
     // Report Info – use the same ID format as the table
     document.getElementById('detailReportId').textContent = formatReportId(report.id);
@@ -347,31 +326,13 @@ async function renderDetailView(report) {
     // Status text in the grid
     document.getElementById('detailStatusText').textContent = badge.text;
 
-    // Build timeline matching officer page's logic
+    // Build horizontal timeline
     const steps = ['submitted', 'approved', 'assigned', 'in-progress', 'resolved'];
     const labels = ['Reported', 'Verified', 'Assigned', 'In Progress', 'Completed'];
 
     let currentStageIndex = steps.indexOf(report.status);
-    if (currentStageIndex === -1) {
-        if (report.status === 'verified' || report.status === 'approved') currentStageIndex = 1;
-        else if (report.status === 'assigned') currentStageIndex = 2; // Matches officer page's likely mapping
-        else if (report.status === 'in-progress') currentStageIndex = 3;
-        else if (report.status === 'resolved') currentStageIndex = 4;
-        else if (report.status === 'rejected') currentStageIndex = 0;
-        else currentStageIndex = 0;
-    }
-
-    const formatDate = (dateStr) => {
-        if (!dateStr) return null;
-        return new Date(dateStr).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: 'numeric',
-            hour12: true
-        });
-    };
+    if (currentStageIndex === -1 && report.status === 'rejected') currentStageIndex = 0;
+    if (currentStageIndex === -1) currentStageIndex = 0;
 
     const timelineEl = document.getElementById('detailTimeline');
     timelineEl.innerHTML = labels.map((label, idx) => {
@@ -380,7 +341,7 @@ async function renderDetailView(report) {
 
         let dotClass = 'tl-dot--pending';
         let stepClass = '';
-        let dateDisplay = 'Pending';
+        let subText = 'Pending';
         let dotIcon = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="4"/></svg>`;
 
         if (isCompleted || isActive) {
@@ -388,13 +349,12 @@ async function renderDetailView(report) {
             stepClass = isActive ? 'tl-active' : 'tl-completed';
             dotIcon = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
 
-            let timestamp = report.created_at;
-            if (idx === 1) timestamp = report.verified_at || report.created_at;
-            else if (idx === 2) timestamp = report.assigned_at || report.created_at;
-            else if (idx === 3) timestamp = report.in_progress_at || report.created_at;
-            else if (idx === 4) timestamp = report.resolved_at || report.created_at;
-
-            dateDisplay = formatDate(timestamp);
+            if (idx === 0 && report.created_at) {
+                const d = new Date(report.created_at);
+                subText = `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}, ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+            } else {
+                subText = isActive ? 'Current' : 'Done';
+            }
         }
 
         return `
@@ -402,7 +362,7 @@ async function renderDetailView(report) {
                 <div class="tl-dot ${dotClass}">${dotIcon}</div>
                 <div class="tl-text">
                     <div class="tl-text__title">${label}</div>
-                    <div class="tl-text__sub">${dateDisplay}</div>
+                    <div class="tl-text__sub">${subText}</div>
                 </div>
             </div>
         `;
@@ -414,11 +374,13 @@ async function renderDetailView(report) {
     const imageUrl = report.image_url;
 
     if (imageUrl) {
+        // Check cache first
         if (blobImageCache[imageUrl]) {
             beforeImg.src = blobImageCache[imageUrl];
             beforeImg.style.display = 'block';
             if (beforePlaceholder) beforePlaceholder.style.display = 'none';
         } else {
+            // Load via authenticated fetch
             beforePlaceholder.querySelector('span').textContent = 'Loading image...';
             beforePlaceholder.style.display = '';
             beforeImg.style.display = 'none';
@@ -438,36 +400,8 @@ async function renderDetailView(report) {
         }
     } else {
         beforeImg.style.display = 'none';
-        if (beforePlaceholder) {
-            beforePlaceholder.querySelector('span').textContent = 'No image uploaded';
-            beforePlaceholder.style.display = '';
-        }
-    }
-
-    // Load After Repair image
-    const afterImg = document.getElementById('afterRepairImg');
-    const afterPlaceholder = document.getElementById('afterPlaceholder');
-
-    if (report.persistedAfterPhoto) {
-        afterImg.src = report.persistedAfterPhoto;
-        afterImg.style.display = 'block';
-        if (afterPlaceholder) afterPlaceholder.style.display = 'none';
-    } else if (report.after_image_url) {
-        // Fallback for API provided after image (future proof)
-        Auth.fetchWithAuth(report.after_image_url).then(res => res.blob()).then(blob => {
-            const url = URL.createObjectURL(blob);
-            afterImg.src = url;
-            afterImg.style.display = 'block';
-            if (afterPlaceholder) afterPlaceholder.style.display = 'none';
-        }).catch(() => {
-            if (afterPlaceholder) afterPlaceholder.querySelector('span').textContent = 'Repair photo pending';
-        });
-    } else {
-        afterImg.style.display = 'none';
-        if (afterPlaceholder) {
-            afterPlaceholder.querySelector('span').textContent = report.status === 'resolved' ? 'Repair photo missing' : 'Repairing in progress';
-            afterPlaceholder.style.display = '';
-        }
+        beforePlaceholder.querySelector('span').textContent = 'No image uploaded';
+        beforePlaceholder.style.display = '';
     }
 
     // Scroll to top

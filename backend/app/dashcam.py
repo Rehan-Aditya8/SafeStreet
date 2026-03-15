@@ -91,7 +91,7 @@ def submit_dashcam_session():
     # Only keep locations where detection confidence >= 0.5
     locations = [
         loc for loc in locations_raw
-        if float(loc.get("confidence", 0)) >= 0.4
+        if float(loc.get("confidence", 0)) >= 0.3
     ]
 
     valid_detection_count = len(locations)

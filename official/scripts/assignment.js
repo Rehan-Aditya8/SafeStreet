@@ -3,7 +3,6 @@
 // =====================================================
 const params = new URLSearchParams(window.location.search);
 const reportId = params.get('id');
-const reportType = params.get('type');
 let reportData = null;
 let contractors = [];
 
@@ -24,7 +23,7 @@ async function initAssignment() {
             showModal('Error', err.message);
         }
     } else {
-        window.location.href = reportType === 'work' ? 'work-reports.html' : 'dashboard.html';
+        window.location.href = 'dashboard.html';
     }
 }
 
@@ -32,24 +31,6 @@ async function initAssignment() {
 // LOAD APPROVED REPORT
 // =====================================================
 async function loadReport() {
-    if (reportType === 'work') {
-        const res = await Auth.fetchWithAuth('/api/official/work-reports');
-        if (!res.ok) throw new Error('Failed to load work reports');
-        const works = await res.json();
-        const report = works.find(r => r.id === reportId);
-        if (!report) throw new Error('Work report not found');
-        
-        // Allowed statuses for work report assignment
-        const allowedStatuses = ['verified', 'approved', 'pending', 'assigned', 'in_progress'];
-        if (!allowedStatuses.includes(report.status.toLowerCase())) {
-            throw new Error('This work report cannot be assigned');
-        }
-        
-        reportData = report;
-        renderReportDetails(report);
-        return;
-    }
-
     const res = await Auth.fetchWithAuth(
         `/api/official/reports/${reportId}`
     );
@@ -86,18 +67,6 @@ async function loadContractors() {
 // RENDER REPORT DETAILS
 // =====================================================
 function renderReportDetails(report) {
-    if (reportType === 'work') {
-        const uniqueNoticeId = report.notice_id ? report.notice_id : `NTC-${report.id.split('-')[0].substring(0, 8).toUpperCase()}`;
-        document.getElementById('reportDetails').innerHTML = `
-            <div class="report-detail-row"><strong>Notice ID:</strong> <span title="${report.notice_id || report.id}">${uniqueNoticeId}</span></div>
-            <div class="report-detail-row"><strong>Department:</strong> ${report.department || 'N/A'}</div>
-            <div class="report-detail-row"><strong>Work Type:</strong> ${report.work_type || 'N/A'}</div>
-            <div class="report-detail-row"><strong>Location:</strong> ${report.location}</div>
-            <div class="report-detail-row"><strong>Executing Agency:</strong> ${report.executing_agency || 'N/A'}</div>
-        `;
-        return;
-    }
-
     document.getElementById('reportDetails').innerHTML = `
         <div class="report-detail-row"><strong>Report ID:</strong> <span title="${report.id}">${report.id.split('-')[0].substring(0, 8)}</span></div>
         <div class="report-detail-row"><strong>Location:</strong> ${report.location}</div>
@@ -154,30 +123,6 @@ function updatePreview() {
 
     const contractor = contractors.find(c => c.id == contractorId);
 
-    if (reportType === 'work') {
-        const uniqueNoticeId = reportData.notice_id ? reportData.notice_id : `NTC-${reportData.id.split('-')[0].substring(0, 8).toUpperCase()}`;
-        document.getElementById('workOrderPreview').textContent = `
-WORK ORDER
-========================================
-Notice ID: ${uniqueNoticeId}
-Department: ${reportData.department || 'N/A'}
-Work Type: ${reportData.work_type || 'N/A'}
-Location: ${reportData.location}
-
-----------------------------------------
-Contractor: ${contractor ? contractor.name : '[Not Selected]'}
-Priority: ${priority}
-Expected Completion: ${completionDate || '[Not Set]'}
-
-----------------------------------------
-Special Instructions:
-${instructions || 'None'}
-
-========================================
-        `.trim();
-        return;
-    }
-
     document.getElementById('workOrderPreview').textContent = `
 WORK ORDER
 ========================================
@@ -213,20 +158,6 @@ async function assignWork() {
     }
 
     try {
-        if (reportType === 'work') {
-            // Mock backend assignment for Work Reports since /api/official/reports/:id requires a citizen report
-            showModal(
-                'Success',
-                'Work order assigned successfully',
-                'success'
-            );
-
-            setTimeout(() => {
-                window.location.href = 'work-reports.html';
-            }, 1500);
-            return;
-        }
-
         const res = await Auth.fetchWithAuth(
             `/api/official/reports/${reportId}/assign`,
             {
@@ -252,7 +183,7 @@ async function assignWork() {
         );
 
         setTimeout(() => {
-            window.location.href = 'dashboard.html';
+            window.location.href = 'assignment.html';
         }, 1500);
 
     } catch (err) {
@@ -264,7 +195,7 @@ async function assignWork() {
 // CANCEL
 // =====================================================
 function cancelAssignment() {
-    window.location.href = reportType === 'work' ? 'work-reports.html' : 'dashboard.html';
+    window.location.href = 'assignment.html';
 }
 
 // =====================================================

@@ -16,8 +16,10 @@
     <!-- Top Bar / Header -->
     <header class="header">
         <div class="logo-area">
-            <div class="logo-icon">
-                <img src="../shared/assets/logo.png" class="logo-img" alt="SafeStreets Logo">
+            <div class="logo-icon ">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 11V1m16 10V1M12 23V1M4 23v-7m16 7v-7" />
+                </svg>
             </div>
             <span class="logo-text">SafeStreets <span class="accent">Officer</span></span>
         </div>
@@ -215,6 +217,14 @@
         <div class="filters-strip">
             <div class="filter-group">
                 <div class="filter-item">
+                    <label>Issue Type</label>
+                    <select id="issueTypeFilter" onchange="applyFilters()">
+                        <option value="">All Types</option>
+                        <option value="pothole">Pothole</option>
+                        <option value="crack">Crack</option>
+                    </select>
+                </div>
+                <div class="filter-item">
                     <label>Severity</label>
                     <select id="severityFilter" onchange="applyFilters()">
                         <option value="">All</option>
@@ -232,7 +242,6 @@
                         <option value="verified">Verified</option>
                         <option value="assigned">Assigned</option>
                         <option value="in-progress">In Progress</option>
-                        <option value="completed">Completed</option>
                     </select>
                 </div>
                 <div class="filter-item">
@@ -251,7 +260,7 @@
         <section class="reports-section">
             <header class="section-header">
                 <h2>Recent Reports</h2>
-                <!-- <a href="work-reports.html" class="view-all">View All Reports</a> -->
+                <a href="work-reports.html" class="view-all">View All Reports</a>
             </header>
             <div class="report-source-toggle" style="margin-top: -0.5rem; margin-bottom: 1.25rem;">
                 <button id="sourceCitizenBtn" class="source-btn active" onclick="setSourceFilter('citizen')">Citizen
@@ -265,7 +274,7 @@
                         <tr>
                             <th>REPORT ID</th>
                             <th>LOCATION</th>
-                            <th>DEPARTMENT</th>
+                            <th>ISSUE TYPE</th>
                             <th>STATUS</th>
                             <th>PRIORITY</th>
                             <th>DATE</th>
@@ -304,7 +313,6 @@
     <script src="../shared/auth.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <script src="scripts/storage-helper.js"></script>
     <script src="scripts/dashboard.js"></script>
 </body>
 
