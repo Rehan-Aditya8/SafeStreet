@@ -18,6 +18,9 @@ The AI model was *custom-trained by our team using YOLO architecture* to detect:
 * *Potholes*
 * *Road cracks*
 
+## 🎥 Project Demo
+[Watch the Demo Video](https://drive.google.com/file/d/1SnSZWMF6acZdbGumuGH8KIz6wLDU1XYM/view?usp=drive_link)
+
 ---
 
 ## 📑 Table of Contents
